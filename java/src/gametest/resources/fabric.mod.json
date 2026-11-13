@@ -1,0 +1,15 @@
+{
+	"schemaVersion": 1,
+	"id": "lavagun-test",
+	"version": "1.0.0",
+	"name": "Lava Guns tests",
+	"environment": "*",
+	"entrypoints": {
+		"fabric-gametest": [
+			"dk.ulfen.lavagun.test.LavaGunGameTests"
+		]
+	},
+	"depends": {
+		"lavagun": "*"
+	}
+}

@@ -1,0 +1,32 @@
+{
+  "format_version": "1.8.0",
+  "animations": {
+    "animation.lavagun.common.look_at_target": {
+      "loop": true,
+      "bones": {
+        "head": {
+          "relative_to": {
+            "rotation": "entity"
+          },
+          "rotation": [
+            "query.target_x_rotation",
+            "query.target_y_rotation",
+            0.0
+          ]
+        }
+      }
+    },
+    "animation.lavagun.common.spin": {
+      "loop": true,
+      "bones": {
+        "root": {
+          "rotation": [
+            "query.anim_time * 540",
+            "query.anim_time * 360",
+            0.0
+          ]
+        }
+      }
+    }
+  }
+}

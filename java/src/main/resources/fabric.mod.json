@@ -1,0 +1,27 @@
+{
+	"schemaVersion": 1,
+	"id": "lavagun",
+	"version": "${version}",
+	"name": "Lava Guns",
+	"description": "Lava guns that shut mobs in obsidian, a magma sprayer and grenades, magmasteel tools and armour, lava lamps, lava tanks, magma golems and lava slugs.",
+	"authors": ["ulfendk"],
+	"contact": {
+		"homepage": "https://ulfendk.github.io/minecraft-lavagun/",
+		"sources": "https://github.com/ulfendk/minecraft-lavagun",
+		"issues": "https://github.com/ulfendk/minecraft-lavagun/issues"
+	},
+	"license": "MIT",
+	"icon": "assets/lavagun/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": ["dk.ulfen.lavagun.LavaGuns"],
+		"client": ["dk.ulfen.lavagun.client.LavaGunsClient"]
+	},
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*",
+		"geckolib": ">=5.5"
+	}
+}
