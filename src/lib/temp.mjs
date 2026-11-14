@@ -19,6 +19,9 @@ export const REPLACEABLE = new Set([
 
 export const canReplace = (typeId) => REPLACEABLE.has(typeId);
 
+/** Where the obsidian gun's lava may set into obsidian: what a shot may replace, and lava. */
+export const canSet = (typeId) => canReplace(typeId) || typeId === 'minecraft:lava' || typeId === 'minecraft:flowing_lava';
+
 export const key = ({ d, x, y, z }) => `${d}|${x}|${y}|${z}`;
 
 /**
@@ -144,6 +147,23 @@ export function disc(cx, y, cz, radius) {
   const out = [];
   for (let x = -radius; x <= radius; x++)
     for (let z = -radius; z <= radius; z++) if (Math.hypot(x, z) <= radius + 0.25) out.push({ x: cx + x, y, z: cz + z });
+  return out;
+}
+
+/**
+ * Where the obsidian gun's lava sets: a disc around `c`, flat against the face that
+ * was hit (`axis` is the axis the face points along: 'y' for a floor or ceiling, so
+ * the disc lies flat; 'x' or 'z' for a wall, so it stands up). Blocks inside `avoid`
+ * (a hitbox) are left out, so a mob that is hit is not set into the obsidian itself.
+ */
+export function splat(c, axis, radius, avoid = null) {
+  const [lo, hi] = avoid ? interior(avoid) : [];
+  const inside = (p) => lo && p.x >= lo[0] && p.x <= hi[0] && p.y >= lo[1] && p.y <= hi[1] && p.z >= lo[2] && p.z <= hi[2];
+  const out = [];
+  for (const { x: a, z: b } of disc(0, 0, 0, radius)) {
+    const p = axis === 'x' ? { x: c.x, y: c.y + a, z: c.z + b } : axis === 'z' ? { x: c.x + a, y: c.y + b, z: c.z } : { x: c.x + a, y: c.y, z: c.z + b };
+    if (!inside(p)) out.push(p);
+  }
   return out;
 }
 

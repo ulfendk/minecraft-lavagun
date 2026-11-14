@@ -1,6 +1,7 @@
 package dk.ulfen.lavagun.test;
 
 import dk.ulfen.lavagun.Gear;
+import dk.ulfen.lavagun.Lava;
 import dk.ulfen.lavagun.LavaData;
 import dk.ulfen.lavagun.LavaRegistry;
 import dk.ulfen.lavagun.block.LavaTankBlock;
@@ -49,6 +50,49 @@ public class LavaGunGameTests {
 			if (helper.getBlockState(floor).is(Blocks.LAVA) && helper.getBlockState(floor).getFluidState().isSource()) helper.fail("The lava did not go away");
 			helper.succeed();
 		});
+	}
+
+	/** A blob from the obsidian gun sets into obsidian where it lands, and the obsidian stays. */
+	@GameTest(structure = AREA, maxTicks = 300)
+	public void obsidianBlobLeavesObsidianThatStays(GameTestHelper helper) {
+		BlockPos floor = new BlockPos(16, 1, 4);
+		LavaShot blob = new LavaShot(LavaRegistry.OBSIDIAN_BLOB, helper.getLevel());
+		Vec3 at = helper.absoluteVec(Vec3.atBottomCenterOf(floor).add(0, 3, 0));
+		blob.setPos(at.x, at.y, at.z);
+		blob.setDeltaMovement(0, -1, 0);
+		helper.getLevel().addFreshEntity(blob);
+		helper.runAfterDelay(20 + gone(LavaData.rules().temporary().lava()), () -> {
+			helper.assertBlockPresent(Blocks.OBSIDIAN, floor);
+			helper.assertBlockPresent(Blocks.OBSIDIAN, floor.east());
+			if (TemporaryBlocks.isTemporary(helper.getLevel(), helper.absolutePos(floor))) helper.fail("The obsidian is temporary");
+			helper.succeed();
+		});
+	}
+
+	/** The obsidian gun's lava sets lava into obsidian too, but leaves water and stone alone. */
+	@GameTest(structure = AREA, maxTicks = 20)
+	public void obsidianSetsOnLavaNotWater(GameTestHelper helper) {
+		BlockPos c = new BlockPos(16, 1, 10);
+		helper.setBlock(c, Blocks.LAVA);
+		helper.setBlock(c.east(), Blocks.WATER);
+		helper.setBlock(c.west(), Blocks.STONE);
+		Lava.setObsidian(helper.getLevel(), helper.absolutePos(c), Direction.Axis.Y, null);
+		helper.assertBlockPresent(Blocks.OBSIDIAN, c);
+		helper.assertBlockPresent(Blocks.OBSIDIAN, c.north());
+		helper.assertBlockPresent(Blocks.WATER, c.east());
+		helper.assertBlockPresent(Blocks.STONE, c.west());
+		helper.succeed();
+	}
+
+	/** A pig hit by the obsidian gun gets obsidian round its feet, but not where it stands. */
+	@GameTest(structure = AREA, maxTicks = 20)
+	public void obsidianSetsRoundAPig(GameTestHelper helper) {
+		Pig pig = helper.spawn(EntityTypes.PIG, new BlockPos(16, 1, 16));
+		BlockPos feet = pig.blockPosition();
+		Lava.setObsidian(helper.getLevel(), feet, Direction.Axis.Y, pig.getBoundingBox());
+		if (helper.getLevel().getBlockState(feet).is(Blocks.OBSIDIAN)) helper.fail("The pig was set into the obsidian");
+		if (!helper.getLevel().getBlockState(feet.east()).is(Blocks.OBSIDIAN)) helper.fail("No obsidian round the pig");
+		helper.succeed();
 	}
 
 	/** A pig hit by the lava gun is shut in obsidian, and let out (and the obsidian gone) after the shell's time. */

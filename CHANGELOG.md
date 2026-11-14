@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.2.0] - 2026-11-14
+
+### Added
+- Obsidian Gun: fires lava that sets into obsidian where it lands – the block hit and the four next to it, flat against the face it hit – and the obsidian stays. It also sets lava into obsidian. A mob that is hit takes 6 damage and burns, and the obsidian sets round its feet. Two lava cells a shot. Nothing is placed with `mobGriefing` off.
+
 ## [0.1.0] - 2026-11-13
 
 ### Added

@@ -17,9 +17,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 
-/** The lava pistol and the lava gun: use to fire a shot, paid for with lava cells from your inventory. */
+/** The lava pistol, the lava gun and the obsidian gun: use to fire a shot, paid for with lava cells from your inventory. */
 public class LavaGunItem extends Item {
 	private final String gunId;
 
@@ -69,11 +70,13 @@ public class LavaGunItem extends Item {
 		if (level instanceof ServerLevel server) {
 			@SuppressWarnings("unchecked")
 			EntityType<LavaShot> type = (EntityType<LavaShot>) BuiltInRegistries.ENTITY_TYPE.getValue(LavaRegistry.id(g.projectile()));
-			Projectile.spawnProjectileFromRotation((lvl, owner, s) -> new LavaShot(type, lvl, owner, s), server, new ItemStack(ammo), player, 0.0F, g.speed(), 0.5F);
+			// The shot looks like what it is made of; the obsidian gun's like what it turns into.
+			ItemStack looks = new ItemStack(g.obsidian() != null ? Items.OBSIDIAN : ammo);
+			Projectile.spawnProjectileFromRotation((lvl, owner, s) -> new LavaShot(type, lvl, owner, s), server, looks, player, 0.0F, g.speed(), 0.5F);
 			stack.hurtAndBreak(1, player, hand == InteractionHand.OFF_HAND ? EquipmentSlot.OFFHAND : EquipmentSlot.MAINHAND);
 		}
 		player.getCooldowns().addCooldown(stack, Math.round(g.cooldown() * 20));
-		level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.BLAZE_SHOOT, SoundSource.PLAYERS, 0.8F, "lava_gun".equals(gunId) ? 0.6F : 1.3F);
+		level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.BLAZE_SHOOT, SoundSource.PLAYERS, 0.8F, "lava_pistol".equals(gunId) ? 1.3F : 0.6F);
 		return InteractionResult.SUCCESS;
 	}
 

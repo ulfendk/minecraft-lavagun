@@ -1,6 +1,6 @@
 {
   "name": "lava-guns",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Lava Guns: a Minecraft Bedrock add-on and Java mod with lava guns, magmasteel tools and armor, lava lamps and tanks, and magma creatures",
   "private": true,
   "type": "module",

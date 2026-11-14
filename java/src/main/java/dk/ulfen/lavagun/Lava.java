@@ -5,11 +5,13 @@ import java.util.List;
 
 import dk.ulfen.lavagun.world.TemporaryBlocks;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.FluidTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -68,6 +70,35 @@ public final class Lava {
 			}
 		}
 		return placed;
+	}
+
+	/**
+	 * The obsidian gun's lava sets into obsidian that stays: a disc round `centre`, flat
+	 * against the face that was hit (`axis` is the axis that face points along). Only
+	 * where a shot may go, or on lava, never on one of our temporary blocks, and never
+	 * inside `avoid` (the mob that was hit). Returns how many blocks were set.
+	 */
+	public static int setObsidian(ServerLevel level, BlockPos centre, Direction.Axis axis, @Nullable AABB avoid) {
+		level.playSound(null, centre, SoundEvents.LAVA_EXTINGUISH, SoundSource.PLAYERS, 1.0F, 0.8F);
+		level.sendParticles(ParticleTypes.LARGE_SMOKE, centre.getX() + 0.5, centre.getY() + 0.5, centre.getZ() + 0.5, 8, 0.5, 0.3, 0.5, 0);
+		if (!mayGrief(level)) return 0;
+		int r = LavaData.rules().guns().get("obsidian_gun").obsidian().radius();
+		int set = 0;
+		for (BlockPos flat : ring(BlockPos.ZERO, r, true)) {
+			int a = flat.getX(), b = flat.getZ();
+			BlockPos pos = switch (axis) {
+				case X -> centre.offset(0, a, b);
+				case Z -> centre.offset(a, b, 0);
+				case Y -> centre.offset(a, 0, b);
+			};
+			if (avoid != null && avoid.intersects(new AABB(pos))) continue;
+			BlockState state = level.getBlockState(pos);
+			if (TemporaryBlocks.isTemporary(level, pos)) continue;
+			if (!TemporaryBlocks.replaceable(state) && !state.getFluidState().is(FluidTags.LAVA)) continue;
+			level.setBlockAndUpdate(pos, Blocks.OBSIDIAN.defaultBlockState());
+			set++;
+		}
+		return set;
 	}
 
 	/** Blocks in a flat ring (or a disc) round a centre. */

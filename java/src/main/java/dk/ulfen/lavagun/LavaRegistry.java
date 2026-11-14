@@ -55,11 +55,12 @@ import net.minecraft.world.level.material.MapColor;
 public final class LavaRegistry {
 	public static EntityType<LavaShot> LAVA_BOLT;
 	public static EntityType<LavaShot> LAVA_BLOB;
+	public static EntityType<LavaShot> OBSIDIAN_BLOB;
 	public static EntityType<MagmaGrenade> MAGMA_GRENADE_ENTITY;
 	public static EntityType<MagmaGolem> MAGMA_GOLEM;
 	public static EntityType<LavaSlug> LAVA_SLUG;
 
-	public static Item LAVA_PISTOL, LAVA_GUN, MAGMA_SPRAYER, MAGMA_GRENADE, LAVA_CELL, MAGMA_CHARGE, MAGMASTEEL_INGOT, MAGMA_CORE;
+	public static Item LAVA_PISTOL, LAVA_GUN, OBSIDIAN_GUN, MAGMA_SPRAYER, MAGMA_GRENADE, LAVA_CELL, MAGMA_CHARGE, MAGMASTEEL_INGOT, MAGMA_CORE;
 	public static Item MAGMASTEEL_SWORD, MAGMASTEEL_PICKAXE, MAGMASTEEL_AXE, MAGMASTEEL_SHOVEL;
 	public static Item MAGMASTEEL_HELMET, MAGMASTEEL_CHESTPLATE, MAGMASTEEL_LEGGINGS, MAGMASTEEL_BOOTS;
 	public static Item MAGMA_GOLEM_SPAWN_EGG, LAVA_SLUG_SPAWN_EGG;
@@ -84,12 +85,14 @@ public final class LavaRegistry {
 	static void register() {
 		LAVA_BOLT = entity("lava_bolt", EntityType.Builder.<LavaShot>of(LavaShot::new, MobCategory.MISC).noLootTable().fireImmune().sized(0.25F, 0.25F).clientTrackingRange(4).updateInterval(10));
 		LAVA_BLOB = entity("lava_blob", EntityType.Builder.<LavaShot>of(LavaShot::new, MobCategory.MISC).noLootTable().fireImmune().sized(0.35F, 0.35F).clientTrackingRange(4).updateInterval(10));
+		OBSIDIAN_BLOB = entity("obsidian_blob", EntityType.Builder.<LavaShot>of(LavaShot::new, MobCategory.MISC).noLootTable().fireImmune().sized(0.35F, 0.35F).clientTrackingRange(4).updateInterval(10));
 		MAGMA_GRENADE_ENTITY = entity("magma_grenade", EntityType.Builder.<MagmaGrenade>of(MagmaGrenade::new, MobCategory.MISC).noLootTable().fireImmune().sized(0.25F, 0.25F).clientTrackingRange(4).updateInterval(10));
 		MAGMA_GOLEM = creature(MagmaGolem.ID, MagmaGolem::new, MobCategory.MONSTER);
 		LAVA_SLUG = creature(LavaSlug.ID, LavaSlug::new, MobCategory.CREATURE);
 
 		LAVA_PISTOL = item("lava_pistol", p -> new LavaGunItem(p, "lava_pistol"), new Item.Properties().durability(400).repairable(REPAIRS_MAGMASTEEL));
 		LAVA_GUN = item("lava_gun", p -> new LavaGunItem(p, "lava_gun"), new Item.Properties().durability(300).repairable(REPAIRS_MAGMASTEEL));
+		OBSIDIAN_GUN = item("obsidian_gun", p -> new LavaGunItem(p, "obsidian_gun"), new Item.Properties().durability(300).repairable(REPAIRS_MAGMASTEEL));
 		MAGMA_SPRAYER = item("magma_sprayer", MagmaSprayerItem::new, new Item.Properties().durability(500).repairable(REPAIRS_MAGMASTEEL));
 		MAGMA_GRENADE = item("magma_grenade", MagmaGrenadeItem::new, new Item.Properties().stacksTo(16));
 		LAVA_CELL = item("lava_cell", Item::new, new Item.Properties());
@@ -123,7 +126,7 @@ public final class LavaRegistry {
 			.title(Component.translatable("itemGroup.lavagun"))
 			.icon(() -> new ItemStack(LAVA_GUN))
 			.displayItems((params, out) -> {
-				for (Item i : new Item[] {LAVA_PISTOL, LAVA_GUN, MAGMA_SPRAYER, MAGMA_GRENADE, LAVA_CELL, MAGMA_CHARGE, MAGMASTEEL_INGOT, MAGMA_CORE,
+				for (Item i : new Item[] {LAVA_PISTOL, LAVA_GUN, OBSIDIAN_GUN, MAGMA_SPRAYER, MAGMA_GRENADE, LAVA_CELL, MAGMA_CHARGE, MAGMASTEEL_INGOT, MAGMA_CORE,
 					MAGMASTEEL_SWORD, MAGMASTEEL_PICKAXE, MAGMASTEEL_AXE, MAGMASTEEL_SHOVEL,
 					MAGMASTEEL_HELMET, MAGMASTEEL_CHESTPLATE, MAGMASTEEL_LEGGINGS, MAGMASTEEL_BOOTS}) out.accept(i);
 				BLOCK_ITEMS.forEach(out::accept);

@@ -1,10 +1,10 @@
 // Used by tools/bds-test.sh: `scriptevent lavagun:selftest` checks that the items,
 // blocks and creatures exist, that a pig is shut in obsidian and let out again,
-// and that temporary lava goes away. It prints PASS or FAIL when it is done.
+// that temporary lava goes away, and that the obsidian gun's obsidian stays. It prints PASS or FAIL when it is done.
 import { BlockPermutation, ItemStack, system, world } from '@minecraft/server';
 import { BLOCKS, CREATURES, ITEMS, RULES } from './data.js';
 import { encase, isHeld } from './guns.js';
-import { placeTemp } from './lava.js';
+import { isTemporary, placeObsidian, placeTemp } from './lava.js';
 import { LOG } from './util.js';
 
 const later = (ticks) => new Promise((resolve) => system.runTimeout(resolve, ticks));
@@ -48,6 +48,14 @@ async function selfTest() {
   // The source is gone (what flowed out of it may still be drying up).
   const lava = dim.getBlock(spot);
   if (lava?.isLiquid && lava.permutation.getState('liquid_depth') === 0) problems.push(`temporary lava is still there (${lava.typeId})`);
+
+  // The obsidian gun's lava sets on lava, and stays.
+  const pool = { x: 18, y: -60, z: 18 };
+  dim.getBlock(pool)?.setType('minecraft:lava');
+  if (!placeObsidian(dim, pool)) problems.push('could not set obsidian on lava');
+  await later(RULES.temporary.lava * 20 + 20);
+  const set = dim.getBlock(pool);
+  if (set?.typeId !== 'minecraft:obsidian' || isTemporary(dim, pool)) problems.push(`the obsidian did not stay (${set?.typeId})`);
 
   console.log(`${LOG} selftest: ${ITEMS.length} items, ${BLOCKS.length} blocks, ${CREATURES.length} creatures`);
   console.log(problems.length ? `${LOG} selftest FAIL: ${problems.join('; ')}` : `${LOG} selftest PASS`);

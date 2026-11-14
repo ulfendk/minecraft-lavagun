@@ -1,6 +1,6 @@
 # Lava Guns
 
-Lava guns for Minecraft – a **Bedrock add-on** and a **Java Edition mod (Fabric)**. A lava pistol, a lava gun that shuts mobs in obsidian, a magma sprayer and magma grenades, magmasteel tools and armour, lava lamps, a lava tank, and two creatures of the Nether.
+Lava guns for Minecraft – a **Bedrock add-on** and a **Java Edition mod (Fabric)**. A lava pistol, a lava gun that shuts mobs in obsidian, an obsidian gun that builds with lasting obsidian, a magma sprayer and magma grenades, magmasteel tools and armour, lava lamps, a lava tank, and two creatures of the Nether.
 
 **Website (English and Danish):** https://ulfendk.github.io/minecraft-lavagun/ · part of [all our mods](https://ulfendk.github.io/minecraft-index/)
 
@@ -11,6 +11,7 @@ Lava guns for Minecraft – a **Bedrock add-on** and a **Java Edition mod (Fabri
 | Lava Pistol | 4 (2 ♥) | 3 s | 1 lava cell |
 | Lava Gun – direct hit | 8 (4 ♥) and **5 s in an obsidian shell** | 5 s after release | 2 lava cells |
 | Lava Gun – miss | 4 within 2 blocks, plus temporary lava | 3 s | |
+| Obsidian Gun | 6 (3 ♥), and up to 5 blocks of **obsidian that stays** where it lands (also on lava) | 3 s | 2 lava cells |
 | Magma Sprayer (hold) | about 5 a second, 6 blocks ahead | 4 s | 1 magma charge per 2 s |
 | Magma Grenade (throw) | 6 at the centre, out to 3 blocks, plus a ring of temporary lava | 4 s | – |
 

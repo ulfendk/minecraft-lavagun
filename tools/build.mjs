@@ -9,7 +9,7 @@ import { BLOCK_RECIPES, BLOCKS, bedrockBlock, blockTextures } from '../src/block
 import { buildItem, ITEMS, RECIPES } from '../src/items.mjs';
 import { langEntries, LOCALES } from '../src/i18n.mjs';
 import { RULES } from '../src/rules.mjs';
-import { armorLayer, lavaBallTexture } from '../src/art.mjs';
+import { armorLayer, lavaBallTexture, obsidianBallTexture } from '../src/art.mjs';
 import { animationFile } from '../src/lib/anim.mjs';
 import {
   buildAnimationControllers, buildClientEntity, buildCreature, buildEntitySounds, buildLoot, buildProjectile,
@@ -134,7 +134,9 @@ export async function build({ quiet = false } = {}) {
   // Projectiles: the shots and the thrown grenade.
   for (const [i, p] of PROJECTILES.entries()) {
     const geo = buildGeometry(`geometry.${NS}.${p.id}`, projectileModel(p));
-    const texture = p.material === 'lava' ? lavaBallTexture(geo.width, geo.height, i + 1) : paintTexture(geo, { grenade: { base: '#4a2216' } });
+    const texture = p.material === 'lava' ? lavaBallTexture(geo.width, geo.height, i + 1)
+      : p.material === 'obsidian' ? obsidianBallTexture(geo.width, geo.height, i + 1)
+      : paintTexture(geo, { grenade: { base: '#4a2216' } });
     await write(join(BP, 'entities', `${p.id}.json`), buildProjectile(p));
     await write(join(RP, 'models', 'entity', `${p.id}.geo.json`), geo.geometry);
     await write(join(RP, 'textures', 'entity', NS, `${p.id}.png`), texture);

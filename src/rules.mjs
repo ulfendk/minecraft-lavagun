@@ -17,6 +17,12 @@ export const RULES = {
       encase: true,
       splash: { radius: 2, damage: 4, fire: 3, lava: true },
     },
+    obsidian_gun: {
+      ammo: 'lava_cell', ammoPerShot: 2, projectile: 'obsidian_blob', cooldown: 1.0,
+      speed: 1.6, gravity: 0.05, damage: 6, fire: 3,
+      // Where it lands the lava sets into obsidian that stays: the block hit and the four next to it.
+      obsidian: { radius: 1 },
+    },
   },
   sprayer: {
     id: 'magma_sprayer', ammo: 'magma_charge', range: 6, cone: 25,

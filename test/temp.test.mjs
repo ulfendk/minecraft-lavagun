@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { canReplace, disc, falloff, inCone, interior, ring, sameBlock, shellPositions, shouldRestore, TempBlocks } from '../src/lib/temp.mjs';
+import { canReplace, canSet, disc, falloff, inCone, interior, ring, sameBlock, shellPositions, shouldRestore, splat, TempBlocks } from '../src/lib/temp.mjs';
 
 const pig = { min: [10.05, 0, 10.05], max: [10.95, 0.9, 10.95] };
 
@@ -73,4 +73,21 @@ test('splash damage falls off with distance, cones and rings have the right shap
   const r = ring(0, 0, 0, 2);
   assert.ok(r.length >= 8 && !r.some((p) => p.x === 0 && p.z === 0));
   assert.ok(disc(0, 0, 0, 2).some((p) => p.x === 0 && p.z === 0));
+});
+
+test('obsidian sets in a plus flat against the face that was hit, and never inside the mob', () => {
+  const has = (ps, x, y, z) => ps.some((p) => p.x === x && p.y === y && p.z === z);
+  const floor = splat({ x: 0, y: 5, z: 0 }, 'y', 1);
+  assert.equal(floor.length, 5);
+  assert.ok(floor.every((p) => p.y === 5) && has(floor, 1, 5, 0) && has(floor, 0, 5, -1));
+  const wall = splat({ x: 0, y: 5, z: 0 }, 'x', 1);
+  assert.ok(wall.every((p) => p.x === 0) && has(wall, 0, 6, 0) && has(wall, 0, 5, 1));
+  const atPig = splat({ x: 10, y: 0, z: 10 }, 'y', 1, pig);
+  assert.equal(atPig.length, 4);
+  assert.ok(!has(atPig, 10, 0, 10));
+});
+
+test('lava sets into obsidian, water and stone do not', () => {
+  for (const id of ['minecraft:lava', 'minecraft:flowing_lava', 'minecraft:air', 'minecraft:short_grass']) assert.ok(canSet(id), id);
+  for (const id of ['minecraft:water', 'minecraft:stone', 'minecraft:obsidian']) assert.ok(!canSet(id), id);
 });

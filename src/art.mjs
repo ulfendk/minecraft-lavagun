@@ -11,14 +11,14 @@ export const C = {
   lava: '#ff7a1a', lavaLight: '#ffd23a', lavaDark: '#c8321a', lavaDeep: '#7a1c0c',
   magmasteel: '#6e2c1c', magmasteelLight: '#a8482a', magmasteelDark: '#3e1810',
   wood: '#5a3a22', woodDark: '#3e2716',
-  obsidian: '#1d1028', glass: '#b7d6e6',
+  obsidian: '#1d1028', obsidianLight: '#4a2a6a', glass: '#b7d6e6',
 };
 
 const P = {
   k: C.outline, g: C.steel, G: C.steelLight, d: C.steelDark,
   o: C.lava, y: C.lavaLight, r: C.lavaDark, R: C.lavaDeep,
   m: C.magmasteel, M: C.magmasteelLight, n: C.magmasteelDark,
-  w: C.wood, W: C.woodDark, b: C.glass, x: C.obsidian,
+  w: C.wood, W: C.woodDark, b: C.glass, x: C.obsidian, v: C.obsidianLight,
 };
 
 const draw = (rows) => pixelIcon(rows, P);
@@ -55,6 +55,24 @@ export const ICONS = {
     'kGGGGGGGGGGGGGGk',
     'kggoooyoooggddk.',
     'kkkdgggggggkkk..',
+    '..kwwkkkdk......',
+    '..kwwk..kk......',
+    '.kwwwk..........',
+    '.kWWWk..........',
+    '.kkkkk..........',
+    '................',
+  ]),
+  obsidian_gun: draw([
+    '................',
+    '................',
+    '................',
+    '......kkkk......',
+    '.....kxooxk.....',
+    '.....kxyoxk.....',
+    'kkkkkkkkkkkkkkk.',
+    'kvvvvvvvvvvvvvvk',
+    'kxxoooyoooxxddk.',
+    'kkkdxxxxxxxkkk..',
     '..kwwkkkdk......',
     '..kwwk..kk......',
     '.kwwwk..........',
@@ -437,4 +455,13 @@ export function armorLayer(layer) {
 /** A small cube of glowing lava for projectiles (Bedrock entity texture). */
 export function lavaBallTexture(w, h, seed = 1) {
   return encode(canvas(w, h, (x, y) => lavaColour(x * 2, y * 2, 0, seed)));
+}
+
+/** Lava setting into obsidian: dark purple with the last of the lava glowing through. */
+export function obsidianBallTexture(w, h, seed = 1) {
+  return encode(canvas(w, h, (x, y) => {
+    const n = fbm(x / 2, y / 2, 0, seed);
+    if (n > 0.66) return hex(C.lava);
+    return shade(hex(C.obsidian), 0.8 + 1.2 * n);
+  }));
 }

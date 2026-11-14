@@ -5,6 +5,7 @@ import dk.ulfen.lavagun.LavaData;
 import dk.ulfen.lavagun.LavaRegistry;
 import dk.ulfen.lavagun.world.Encasement;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -13,6 +14,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrowableItemProjectile;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
@@ -20,8 +22,8 @@ import net.minecraft.world.phys.HitResult;
 
 /**
  * A shot from a lava gun. The lava pistol's bolt burns what it hits; the lava gun's
- * blob shuts a mob in obsidian, or splashes lava where it lands. The numbers are in
- * src/rules.mjs (guns.lava_pistol and guns.lava_gun).
+ * blob shuts a mob in obsidian, or splashes lava where it lands; the obsidian gun's
+ * blob sets into obsidian that stays. The numbers are in src/rules.mjs (guns.*).
  */
 public class LavaShot extends ThrowableItemProjectile {
 	public LavaShot(EntityType<? extends LavaShot> type, Level level) {
@@ -36,13 +38,17 @@ public class LavaShot extends ThrowableItemProjectile {
 		return this.getType() == LavaRegistry.LAVA_BLOB;
 	}
 
+	private boolean isObsidian() {
+		return this.getType() == LavaRegistry.OBSIDIAN_BLOB;
+	}
+
 	private LavaData.Gun gun() {
-		return LavaData.rules().guns().get(isBlob() ? "lava_gun" : "lava_pistol");
+		return LavaData.rules().guns().get(isObsidian() ? "obsidian_gun" : isBlob() ? "lava_gun" : "lava_pistol");
 	}
 
 	@Override
 	protected Item getDefaultItem() {
-		return isBlob() ? LavaRegistry.MAGMA_CORE : LavaRegistry.MAGMA_CHARGE;
+		return isObsidian() ? Items.OBSIDIAN : isBlob() ? LavaRegistry.MAGMA_CORE : LavaRegistry.MAGMA_CHARGE;
 	}
 
 	@Override
@@ -54,7 +60,7 @@ public class LavaShot extends ThrowableItemProjectile {
 	public void tick() {
 		super.tick();
 		if (this.level().isClientSide() && this.tickCount % 2 == 0) {
-			this.level().addParticle(isBlob() ? ParticleTypes.LAVA : ParticleTypes.FLAME, this.getX(), this.getY(), this.getZ(), 0, 0, 0);
+			this.level().addParticle(isBlob() || isObsidian() ? ParticleTypes.LAVA : ParticleTypes.FLAME, this.getX(), this.getY(), this.getZ(), 0, 0, 0);
 		}
 	}
 
@@ -67,6 +73,13 @@ public class LavaShot extends ThrowableItemProjectile {
 		if (!Lava.mayHurt(level, target, owner)) return;
 		LavaData.Gun g = gun();
 		var source = this.damageSources().thrown(this, owner);
+		if (isObsidian()) {
+			// Sets round its feet, not on it.
+			var box = target.getBoundingBox();
+			Lava.hurt(level, target, source, g.damage(), g.fire());
+			Lava.setObsidian(level, target.blockPosition(), Direction.Axis.Y, box);
+			return;
+		}
 		if (!isBlob()) {
 			Lava.hurt(level, target, source, g.damage(), g.fire());
 			return;
@@ -80,7 +93,12 @@ public class LavaShot extends ThrowableItemProjectile {
 	@Override
 	protected void onHitBlock(BlockHitResult hit) {
 		super.onHitBlock(hit);
-		if (!isBlob() || !(this.level() instanceof ServerLevel level)) return;
+		if (!(this.level() instanceof ServerLevel level)) return;
+		if (isObsidian()) {
+			Lava.setObsidian(level, hit.getBlockPos().relative(hit.getDirection()), hit.getDirection().getAxis(), null);
+			return;
+		}
+		if (!isBlob()) return;
 		LavaData.Splash s = gun().splash();
 		Lava.splash(level, hit.getLocation(), s.radius(), s.damage(), s.fire(), this.damageSources().thrown(this, this.getOwner()), this.getOwner());
 		if (s.lava() && Lava.mayGrief(level)) {
@@ -93,7 +111,7 @@ public class LavaShot extends ThrowableItemProjectile {
 	protected void onHit(HitResult hit) {
 		super.onHit(hit);
 		if (this.level() instanceof ServerLevel level) {
-			level.sendParticles(ParticleTypes.LAVA, this.getX(), this.getY(), this.getZ(), isBlob() ? 8 : 3, 0.2, 0.2, 0.2, 0);
+			level.sendParticles(ParticleTypes.LAVA, this.getX(), this.getY(), this.getZ(), isBlob() || isObsidian() ? 8 : 3, 0.2, 0.2, 0.2, 0);
 			this.discard();
 		}
 	}

@@ -2,7 +2,7 @@
 // lava walker boots. The list is saved with the world, so a block whose time is
 // up while the world is closed is put back the next time it is loaded.
 import { system, world } from '@minecraft/server';
-import { canReplace, shouldRestore, TempBlocks } from './temp.js';
+import { canReplace, canSet, shouldRestore, TempBlocks } from './temp.js';
 import { LOG } from './util.js';
 
 const PROP = 'lavagun:temp_blocks';
@@ -37,6 +37,23 @@ export function placeTemp(dimension, pos, type, seconds, { restore = 'minecraft:
   temp.add({ ...e, b: type, r: restore, t: Math.round(seconds * 20) });
   dirty = true;
   return true;
+}
+
+/**
+ * Obsidian that stays (the obsidian gun): where a shot may go, or on lava, but never
+ * on one of our temporary blocks. True if it was placed.
+ */
+export function placeObsidian(dimension, pos) {
+  const e = at(dimension, pos);
+  if (temp.has(e)) return false;
+  try {
+    const block = dimension.getBlock(e);
+    if (!block || !canSet(block.typeId)) return false;
+    block.setType('minecraft:obsidian');
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function sweep() {

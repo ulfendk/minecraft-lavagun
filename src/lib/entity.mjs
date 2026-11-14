@@ -179,6 +179,7 @@ export function buildEntitySounds(c) {
 export const PROJECTILES = [
   { id: 'lava_bolt', size: [2, 2, 4], gravity: 0.01, power: 3.2, material: 'lava' },
   { id: 'lava_blob', size: [4, 4, 4], gravity: 0.05, power: 1.6, material: 'lava' },
+  { id: 'obsidian_blob', size: [4, 4, 4], gravity: 0.05, power: 1.6, material: 'obsidian' },
   { id: 'magma_grenade', size: [3, 3, 3], gravity: 0.05, power: 1.0, material: 'grenade' },
 ];
 

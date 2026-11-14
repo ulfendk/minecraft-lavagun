@@ -57,6 +57,7 @@ const gun = (id, name, durability) => ({
 export const ITEMS = [
   gun('lava_pistol', ['Lava Pistol', 'Lavapistol'], 400),
   gun('lava_gun', ['Lava Gun', 'Lavakanon'], 300),
+  gun('obsidian_gun', ['Obsidian Gun', 'Obsidiankanon'], 300),
   {
     ...gun('magma_sprayer', ['Magma Sprayer', 'Magmasprøjte'], 500),
     // Hold to spray (scripts/guns.js).
@@ -158,6 +159,7 @@ export const RECIPES = [
   shapeless('magma_charge', ['magma_cream', 'blaze_powder'], 4),
   shaped('lava_pistol', ['MMF', ' S '], { M, F: 'flint_and_steel', S }),
   shaped('lava_gun', ['MMM', 'CFS'], { M, C: `${NS}:magma_core`, F: 'flint_and_steel', S }),
+  shaped('obsidian_gun', ['MMO', 'CFS'], { M, O: 'obsidian', C: `${NS}:magma_core`, F: 'flint_and_steel', S }),
   shaped('magma_sprayer', ['B  ', 'MMF', '  S'], { B: 'bucket', M, F: 'flint_and_steel', S }),
   shaped('magma_grenade', [' N ', 'MCM', ' M '], { N: 'iron_nugget', M, C: `${NS}:magma_charge` }, 2),
   ...Object.entries(TOOL_PATTERNS).map(([tool, p]) => shaped(`magmasteel_${tool}`, p, { M, S })),

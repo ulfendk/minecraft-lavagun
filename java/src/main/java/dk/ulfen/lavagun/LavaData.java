@@ -21,9 +21,12 @@ public final class LavaData {
 		Shell shell, List<String> fireproof, Tank tank, Slug slug, Armor armor) {}
 
 	public record Gun(String ammo, int ammoPerShot, String projectile, float cooldown, float speed, float gravity, float damage, int fire,
-		boolean encase, Splash splash) {}
+		boolean encase, Splash splash, Obsidian obsidian) {}
 
 	public record Splash(float radius, float damage, int fire, boolean lava) {}
+
+	/** The obsidian gun: lava that sets into obsidian, in a disc of this radius. */
+	public record Obsidian(int radius) {}
 
 	public record Sprayer(String id, String ammo, float range, float cone, int pulseTicks, float damage, int fire, int ticksPerCharge) {}
 

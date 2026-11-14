@@ -1,10 +1,10 @@
-// The lava guns. The pistol and the lava gun fire a shot when used; the magma
+// The lava guns. The pistol, the lava gun and the obsidian gun fire a shot when used; the magma
 // sprayer sprays fire for as long as it is held; the grenade is thrown by the game
 // itself. What happens when a shot hits is decided here, not in the projectile.
 import { system, world } from '@minecraft/server';
 import { RULES } from './data.js';
-import { placeTemp } from './lava.js';
-import { disc, falloff, inCone, ring, shellPositions } from './temp.js';
+import { placeObsidian, placeTemp } from './lava.js';
+import { disc, falloff, inCone, ring, shellPositions, splat } from './temp.js';
 import {
   add, dist, floor, hitbox, isCreative, isFireproof, isPlayer, mayGrief, NS, pvp, scale, takeItems, tell, wearSelected,
 } from './util.js';
@@ -13,6 +13,7 @@ const GUNS = Object.fromEntries(Object.entries(RULES.guns).map(([id, g]) => [`${
 const SPRAYER = `${NS}:${RULES.sprayer.id}`;
 const BOLT = `${NS}:lava_bolt`;
 const BLOB = `${NS}:lava_blob`;
+const OBSIDIAN = `${NS}:obsidian_blob`;
 const GRENADE = `${NS}:${RULES.grenade.id}`;
 const EXEMPT = new Set(RULES.shell.exempt);
 
@@ -60,6 +61,14 @@ function lavaPatch(dimension, positions, seconds) {
     }
   }
   return placed;
+}
+
+/** The obsidian gun's lava sets into obsidian that stays, flat against the face it hit. */
+function setObsidian(dimension, centre, axis, avoid) {
+  dimension.playSound('random.fizz', centre, { pitch: 0.8, volume: 1.2 });
+  dimension.spawnParticle('minecraft:large_smoke_particle', add(centre, { x: 0.5, y: 0.5, z: 0.5 }));
+  if (!mayGrief()) return 0;
+  return splat(centre, axis, RULES.guns.obsidian_gun.obsidian.radius, avoid).filter((p) => placeObsidian(dimension, p)).length;
 }
 
 // ---------------------------------------------------------------- the obsidian shell
@@ -141,7 +150,7 @@ function fireGun(player, item, gun) {
   cooldown?.startCooldown(player);
   launch(player, `${NS}:${gun.projectile}`, gun.speed);
   const eye = player.getHeadLocation();
-  player.dimension.playSound('mob.blaze.shoot', eye, { pitch: gun.id === 'lava_gun' ? 0.6 : 1.3, volume: 0.8 });
+  player.dimension.playSound('mob.blaze.shoot', eye, { pitch: gun.id === 'lava_pistol' ? 1.3 : 0.6, volume: 0.8 });
   player.dimension.spawnParticle('minecraft:lava_particle', add(eye, scale(player.getViewDirection(), 1.2)));
   wearSelected(player);
 }
@@ -207,6 +216,12 @@ function hitEntity(event) {
     // Shut in first: it burns when it gets out.
     hurt(target, g.damage, attacker, 0);
     if (!encase(target, attacker) && target.isValid && !isFireproof(target)) target.setOnFire(g.fire, true);
+  } else if (type === OBSIDIAN) {
+    const g = RULES.guns.obsidian_gun;
+    const box = hitbox(target);
+    hurt(target, g.damage, attacker, g.fire);
+    // Sets round its feet.
+    setObsidian(event.dimension, floor(target.location), 'y', box);
   }
 }
 
@@ -219,6 +234,11 @@ function hitBlock(event) {
   }
   const { dimension, location, source } = event;
   if (type === GRENADE) return burst(dimension, location, source);
+  if (type === OBSIDIAN) {
+    const face = event.getBlockHit();
+    if (!face?.block) return setObsidian(dimension, floor(location), 'y');
+    return setObsidian(dimension, add(face.block.location, faceOffset(face.face)), AXES[face.face] ?? 'y');
+  }
   if (type !== BLOB) return;
   const s = RULES.guns.lava_gun.splash;
   splash(dimension, location, s, source);
@@ -232,6 +252,7 @@ function hitBlock(event) {
 }
 
 const OFFSETS = { Up: [0, 1, 0], Down: [0, -1, 0], North: [0, 0, -1], South: [0, 0, 1], West: [-1, 0, 0], East: [1, 0, 0] };
+const AXES = { Up: 'y', Down: 'y', North: 'z', South: 'z', West: 'x', East: 'x' };
 function faceOffset(face) {
   const [x, y, z] = OFFSETS[face] ?? [0, 1, 0];
   return { x, y, z };
