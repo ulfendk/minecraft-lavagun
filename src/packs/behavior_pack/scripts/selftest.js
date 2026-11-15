@@ -148,19 +148,21 @@ async function volcanoTest(dim, problems) {
   console.log(`${LOG} selftest: the eruption left ${after - before} rubble blocks round the volcano`);
   if (after <= before) problems.push('the eruption left no rubble');
 
-  // The volcanoes that generate with the world.
+  // The volcanoes that generate with the world. The structure turns about its corner, so look all round it.
+  const site = { x: 300, y: -60, z: 0 };
   let placed = false;
   for (const name of ['volcano_feature', 'volcano_0_feature']) {
     try {
-      placed = dim.placeFeature(`lavagun:${name}`, { x: 272, y: -60, z: 0 }, true);
+      placed = dim.placeFeature(`lavagun:${name}`, site, true);
     } catch (e) {
       console.log(`${LOG} selftest: placing ${name} failed: ${e}`);
     }
     if (placed) break;
   }
   await later(20);
-  const vents = count(dim, [`lavagun:${V.id}`], { x: 262, y: -60, z: -10 }, { x: 312, y: -20, z: 40 });
-  console.log(`${LOG} selftest: the volcano feature placed ${vents} vents`);
+  const reach = 2 * V.radius + 5;
+  const vents = count(dim, [`lavagun:${V.id}`], { x: site.x - reach, y: site.y, z: site.z - reach }, { x: site.x + reach, y: site.y + 40, z: site.z + reach });
+  console.log(`${LOG} selftest: the volcano feature was placed: ${placed}, ${vents} vents`);
   if (!vents) problems.push('the volcano feature placed no vent');
 }
 
