@@ -149,9 +149,17 @@ async function volcanoTest(dim, problems) {
 
   // The volcanoes that generate with the world.
   try {
-    dim.runCommand('place feature lavagun:volcano_feature 290 -60 0');
+    const { successCount } = dim.runCommand('place feature lavagun:volcano_feature 272 -60 0');
     await later(20);
-    if (!count(dim, [`lavagun:${V.id}`], { x: 270, y: -60, z: -20 }, { x: 320, y: -20, z: 30 })) problems.push('the volcano feature placed no vent');
+    const vents = count(dim, [`lavagun:${V.id}`], { x: 262, y: -60, z: -10 }, { x: 312, y: -20, z: 40 });
+    console.log(`${LOG} selftest: place feature succeeded ${successCount} times, ${vents} vents`);
+    if (!vents) {
+      // Which part turned it down: one variant on its own, with its constraints.
+      const one = dim.runCommand('place feature lavagun:volcano_0_feature 272 -60 0').successCount;
+      await later(20);
+      console.log(`${LOG} selftest: one variant on its own succeeded ${one} times`);
+      problems.push('the volcano feature placed no vent');
+    }
   } catch (e) {
     console.log(`${LOG} selftest: could not place the volcano feature here (${e}); skipped`);
   }

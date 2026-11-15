@@ -113,7 +113,7 @@ const VOLCANO_GROUND = [
   'minecraft:red_sand', 'minecraft:sandstone', 'minecraft:snow', 'minecraft:snow_layer', 'minecraft:powder_snow', 'minecraft:ice', 'minecraft:packed_ice',
   'minecraft:calcite', 'minecraft:clay', 'minecraft:terracotta', 'minecraft:short_grass', 'minecraft:tall_grass', 'minecraft:fern', 'minecraft:large_fern',
   'minecraft:water', 'minecraft:lava', 'minecraft:netherrack', 'minecraft:basalt', 'minecraft:blackstone', 'minecraft:magma', 'minecraft:soul_sand',
-  'minecraft:soul_soil', 'minecraft:copper_ore', 'minecraft:coal_ore', 'minecraft:iron_ore',
+  'minecraft:soul_soil', 'minecraft:copper_ore', 'minecraft:coal_ore', 'minecraft:iron_ore', 'minecraft:flowing_water', 'minecraft:flowing_lava', 'minecraft:fire',
 ];
 
 /**

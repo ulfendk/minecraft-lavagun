@@ -57,8 +57,19 @@ export function grow(block) {
   return vent;
 }
 
-/** Lava in the crater above the vent, where it has been taken out or has run off. */
+/**
+ * Lava in the crater above the vent, where it has been taken out or has run off. Lava
+ * that comes with a structure lies still until something nudges it, so flowing lava
+ * also goes into the notch in the rim (the air next to the lake's top) to start it off.
+ */
 function refill(dimension, vent) {
+  const surface = vent.y + V.crater.depth - 1;
+  for (const p of disc(vent.x, surface, vent.z, V.crater.radius + 1)) {
+    try {
+      const block = dimension.getBlock(p);
+      if (block?.isAir) block.setType('minecraft:flowing_lava');
+    } catch {}
+  }
   for (let y = vent.y + 1; y < vent.y + V.crater.depth; y++) {
     for (const p of disc(vent.x, y, vent.z, V.crater.radius)) {
       try {
