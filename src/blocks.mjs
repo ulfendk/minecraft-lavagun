@@ -34,6 +34,14 @@ export const BLOCKS = [
   },
 ];
 
+// The volcano vent: grows a volcano round itself, then keeps its crater full of lava
+// and now and then erupts (scripts/volcano.js; dk.ulfen.lavagun.block.VolcanoVentBlock).
+export const VENT_STATE = `${NS}:grown`;
+BLOCKS.push({
+  id: RULES.volcano.id, name: ['Volcano Vent', 'Vulkanåbning'], texture: BLOCK_TEXTURES.volcano_vent(),
+  hardness: 50, light: 15, sound: 'stone', map: '#ff6a00', vent: true,
+});
+
 export const BLOCK_RECIPES = [
   shaped('magma_bricks', ['XX', 'XX'], { X: 'magma' }, 4),
   shaped('polished_magma', ['XX', 'XX'], { X: `${NS}:magma_bricks` }, 4),
@@ -42,6 +50,7 @@ export const BLOCK_RECIPES = [
   shapeless('magmasteel_ingot_from_block', [`${NS}:magmasteel_block`], 9, `${NS}:magmasteel_ingot`),
   ...Object.entries(LAMP_DYES).map(([colour, dye]) => shaped(`lava_lamp_${colour}`, [' I ', 'GDG', 'ILI'], { I: 'iron_ingot', G: 'glass', D: dye, L: `${NS}:lava_cell` })),
   shaped('lava_tank', ['IGI', 'G G', 'IGI'], { I: 'iron_ingot', G: 'glass' }),
+  shaped(RULES.volcano.id, ['MBM', 'BCB', 'MBM'], { M: 'magma', B: 'basalt', C: `${NS}:magma_core` }),
 ];
 
 /** Texture atlas names (terrain_texture.json) and the files they point at. */
@@ -71,6 +80,8 @@ export function bedrockBlock(block) {
     ...(block.light ? { 'minecraft:light_emission': block.light } : {}),
     // Right-click with buckets and lava cells (scripts/tank.js).
     ...(block.tank ? { [`${NS}:tank`]: {} } : {}),
+    // Ticks once a second (scripts/volcano.js); random ticks find vents placed with the world.
+    ...(block.vent ? { [`${NS}:vent`]: {}, 'minecraft:tick': { interval_range: [20, 20], looping: true } } : {}),
   };
   return {
     format_version: '1.21.90',
@@ -79,6 +90,7 @@ export function bedrockBlock(block) {
         identifier: `${NS}:${block.id}`,
         menu_category: { category: 'construction' },
         ...(block.tank ? { states: { [TANK_STATE]: { values: { min: 0, max: RULES.tank.capacity } } } } : {}),
+        ...(block.vent ? { states: { [VENT_STATE]: [false, true] } } : {}),
       },
       components,
       ...(block.tank ? {

@@ -2,15 +2,14 @@
 // it turns to where you look and fires a ball of lava, which leaves lava that stays
 // where it lands; sneak and use it to pick the range, 1 to 5.
 //
-// The ball is flown from here, tick by tick, along the same path as on Java (moves,
-// slows by 1 %, falls): Bedrock's own projectiles slow down far more, and the
-// ranges would not hold.
+// The ball is flown by scripts/flight.js.
 import { system, world } from '@minecraft/server';
 import { RULES } from './data.js';
-import { hurt, mayHurt } from './guns.js';
+import { launch } from './flight.js';
+import { hurt } from './guns.js';
 import { placeLasting } from './lava.js';
-import { canReplace, nextRange, shotSpeed } from './temp.js';
-import { add, floor, hitbox, isCreative, mayGrief, NS, scale, takeItems, tell } from './util.js';
+import { nextRange, shotSpeed } from './temp.js';
+import { add, floor, isCreative, mayGrief, NS, takeItems, tell } from './util.js';
 
 const C = RULES.cannon;
 const CANNON = `${NS}:${C.id}`;
@@ -18,11 +17,9 @@ const BALL = `${NS}:${C.projectile}`;
 const RANGE = `${NS}:range`;
 // Ranges are from the cannon; the ball leaves from the muzzle, a little ahead of it.
 const SPEEDS = C.ranges.map((r) => shotSpeed(r - C.muzzle.forward, C.angle, C.gravity, C.muzzle.up));
-const MAX_TICKS = 400;
 
 const readyAt = new Map(); // cannon id -> tick it may fire again
 const lastUse = new Map(); // player id -> tick of their last use (one click can be heard twice)
-const balls = new Map(); // ball id -> { ball, dimension, pos, vel, owner, age }
 
 export const getRange = (cannon) => cannon.getDynamicProperty(RANGE) ?? C.startRange;
 
@@ -54,9 +51,8 @@ export function fireCannon(cannon, player) {
   const from = add(cannon.location, { x: ahead.x * C.muzzle.forward, y: C.muzzle.up, z: ahead.z * C.muzzle.forward });
   const speed = SPEEDS[getRange(cannon) - 1];
   const { dimension } = cannon;
-  const ball = dimension.spawnEntity(BALL, from);
   const vel = { x: ahead.x * Math.cos(a) * speed, y: Math.sin(a) * speed, z: ahead.z * Math.cos(a) * speed };
-  balls.set(ball.id, { ball, dimension, pos: from, vel, owner: player, age: 0 });
+  launch(dimension, BALL, from, vel, { gravity: C.gravity, owner: player, ignore: [CANNON], land });
   try {
     cannon.playAnimation(`animation.${NS}.${C.id}.fire`);
     dimension.playSound('random.explode', from, { pitch: 0.7, volume: 1.2 });
@@ -72,40 +68,6 @@ function lastingLava(dimension, pos) {
   return placeLasting(dimension, pos, 'minecraft:lava') || placeLasting(dimension, add(pos, { x: 0, y: 1, z: 0 }), 'minecraft:lava');
 }
 
-/** Does the ball stop in this block? Not in air, water, lava or grass and flowers. */
-function stops(block) {
-  return !!block && !block.isAir && !block.isLiquid && !canReplace(block.typeId);
-}
-
-/** Is `p` inside `entity`'s hitbox (give or take the ball's size)? */
-function inside(entity, p) {
-  const { min, max } = hitbox(entity);
-  const r = 0.2;
-  return p.x > min[0] - r && p.x < max[0] + r && p.y > min[1] - r && p.y < max[1] + r && p.z > min[2] - r && p.z < max[2] + r;
-}
-
-/**
- * Where the ball hits in this tick's move, if anywhere: it goes along the move in short
- * steps and stops at the first mob or solid block. (Bedrock's raycasts miss short hops.)
- */
-function hitThisTick(s) {
-  const length = Math.hypot(s.vel.x, s.vel.y, s.vel.z);
-  const steps = Math.max(1, Math.ceil(length / 0.25));
-  let before = s.pos;
-  try {
-    const near = s.dimension.getEntities({ location: s.pos, maxDistance: length + 3, excludeTypes: [BALL, CANNON] })
-      .filter((e) => e.id !== s.owner?.id && mayHurt(e, s.owner));
-    for (let k = 1; k <= steps; k++) {
-      const p = add(s.pos, scale(s.vel, k / steps));
-      const entity = near.find((e) => inside(e, p));
-      if (entity) return { entity, at: p };
-      if (stops(s.dimension.getBlock(floor(p)))) return { at: p, before };
-      before = p;
-    }
-  } catch {}
-  return null;
-}
-
 function land(s, hit) {
   const { dimension } = s;
   try {
@@ -119,34 +81,6 @@ function land(s, hit) {
   } else {
     // The block the ball was in just before it hit.
     lastingLava(dimension, floor(hit.before));
-  }
-}
-
-function tickBalls() {
-  for (const [id, s] of balls) {
-    if (!s.ball.isValid || ++s.age > MAX_TICKS) {
-          balls.delete(id);
-      try {
-        s.ball.remove();
-      } catch {}
-      continue;
-    }
-    const hit = hitThisTick(s);
-    if (hit) {
-      balls.delete(id);
-      land(s, hit);
-      try {
-        s.ball.remove();
-      } catch {}
-      continue;
-    }
-    s.pos = add(s.pos, s.vel);
-    s.vel = { x: s.vel.x * 0.99, y: s.vel.y * 0.99 - C.gravity, z: s.vel.z * 0.99 };
-    try {
-      s.ball.teleport(s.pos);
-    } catch (e) {
-          balls.delete(id);
-    }
   }
 }
 
@@ -171,13 +105,6 @@ export function setupCannon() {
       if (player) entity.setRotation({ x: 0, y: player.getRotation().y });
     } catch {}
   });
-  // A ball left in the air when the world was closed has lost its flight: take it away.
-  world.afterEvents.entityLoad.subscribe(({ entity }) => {
-    try {
-      if (entity.typeId === BALL && !balls.has(entity.id)) entity.remove();
-    } catch {}
-  });
-  system.runInterval(tickBalls, 1);
   world.afterEvents.entityRemove.subscribe(({ removedEntityId }) => readyAt.delete(removedEntityId));
   world.afterEvents.playerLeave.subscribe(({ playerId }) => lastUse.delete(playerId));
 }

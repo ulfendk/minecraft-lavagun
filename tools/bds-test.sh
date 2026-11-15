@@ -52,6 +52,8 @@ done
 
 send() { docker exec -u 0 "$NAME" send-command "$@"; }
 send tickingarea add circle 0 0 0 4 lavagun_test true
+# The volcano's test is far from the rest: it grows, runs lava and throws bombs.
+send tickingarea add circle 256 0 0 4 lavagun_volcano true
 sleep 5
 # Summon every creature (the entities with spawn rules) inside the ticking area.
 n=0
@@ -63,8 +65,8 @@ done
 sleep 10
 send scriptevent lavagun:selftest
 # The selftest waits for an obsidian shell and temporary lava to go away and for the
-# cannon's shots to land: wait for its verdict (at most two minutes).
-for _ in $(seq 60); do
+# cannon's shots to land and for a volcano to erupt: wait for its verdict (at most three minutes).
+for _ in $(seq 90); do
   docker logs "$NAME" 2>&1 | grep -qE "selftest (PASS|FAIL)" && break
   sleep 2
 done

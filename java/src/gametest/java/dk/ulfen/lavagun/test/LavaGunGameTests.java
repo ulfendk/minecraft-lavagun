@@ -5,11 +5,14 @@ import dk.ulfen.lavagun.Lava;
 import dk.ulfen.lavagun.LavaData;
 import dk.ulfen.lavagun.LavaRegistry;
 import dk.ulfen.lavagun.block.LavaTankBlock;
+import dk.ulfen.lavagun.block.VolcanoVentBlock;
 import dk.ulfen.lavagun.entity.LavaCannon;
 import dk.ulfen.lavagun.entity.LavaShot;
 import dk.ulfen.lavagun.entity.LavaSlug;
 import dk.ulfen.lavagun.world.Encasement;
 import dk.ulfen.lavagun.world.TemporaryBlocks;
+import dk.ulfen.lavagun.world.Volcano;
+import dk.ulfen.lavagun.world.VolcanoFeature;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -265,6 +268,101 @@ public class LavaGunGameTests {
 		var slug = helper.spawn(LavaRegistry.LAVA_SLUG, new BlockPos(14, 1, 14));
 		if (!golem.fireImmune() || !slug.fireImmune()) helper.fail("The creatures are not fire-proof");
 		if (golem.getBbHeight() < 2.5F) helper.fail("The golem is only " + golem.getBbHeight() + " blocks tall");
+		helper.succeed();
+	}
+
+	// ---------------------------------------------------------------- volcanoes
+
+	/** The middle of the test area, on its floor: a volcano fits round it. */
+	private static final BlockPos VOLCANO = new BlockPos(20, 1, 20);
+
+	private static int floor() {
+		var v = LavaData.rules().volcano();
+		return v.height() - v.crater().depth();
+	}
+
+	/** A volcano vent put down grows a volcano round itself, with a lake of lava in its crater. */
+	@GameTest(structure = AREA, maxTicks = 100)
+	public void ventGrowsVolcano(GameTestHelper helper) {
+		helper.setBlock(VOLCANO, LavaRegistry.VOLCANO_VENT);
+		helper.runAfterDelay(50, () -> {
+			BlockPos vent = VOLCANO.above(floor());
+			helper.assertBlockPresent(LavaRegistry.VOLCANO_VENT, vent);
+			if (!helper.getBlockState(vent).getValue(VolcanoVentBlock.GROWN)) helper.fail("The vent has not grown");
+			helper.assertBlockPresent(Blocks.LAVA, vent.above());
+			if (helper.getBlockState(VOLCANO.offset(8, 0, 0)).isAir()) helper.fail("The volcano has no side");
+			if (helper.getBlockState(VOLCANO.offset(0, 0, 0)).is(LavaRegistry.VOLCANO_VENT)) helper.fail("The vent is still on the ground");
+			helper.succeed();
+		});
+	}
+
+	/** Lava runs out over the notch in the rim and down the side. */
+	@GameTest(structure = AREA, maxTicks = 300)
+	public void volcanoLavaRunsOver(GameTestHelper helper) {
+		Volcano.build(helper.getLevel(), helper.absolutePos(VOLCANO), 1);
+		int cR = LavaData.rules().volcano().crater().radius();
+		helper.succeedWhen(() -> {
+			for (int dx = -15; dx <= 15; dx++)
+				for (int dz = -15; dz <= 15; dz++) {
+					if (Math.hypot(dx, dz) < cR + 1) continue;
+					for (int y = 0; y < floor() + 3; y++) {
+						if (helper.getBlockState(VOLCANO.offset(dx, y, dz)).is(Blocks.LAVA)) return;
+					}
+				}
+			helper.fail("No lava outside the crater");
+		});
+	}
+
+	/** Take the lava out of the crater and the vent puts it back. */
+	@GameTest(structure = AREA, maxTicks = 200)
+	public void ventRefillsCrater(GameTestHelper helper) {
+		Volcano.build(helper.getLevel(), helper.absolutePos(VOLCANO), 2);
+		BlockPos lake = VOLCANO.above(floor() + 1);
+		helper.runAfterDelay(5, () -> helper.setBlock(lake, Blocks.AIR));
+		helper.runAfterDelay(10, () -> helper.succeedWhen(() -> {
+			if (!helper.getBlockState(lake).is(Blocks.LAVA) || !helper.getBlockState(lake).getFluidState().isSource()) helper.fail("The crater was not filled again");
+		}));
+	}
+
+	/** The volcano feature builds a volcano on the ground it is given. */
+	@GameTest(structure = AREA, maxTicks = 20)
+	public void featureBuildsVolcano(GameTestHelper helper) {
+		var level = helper.getLevel();
+		if (!new VolcanoFeature().place(level, level.getChunkSource().getGenerator(), level.getRandom(), helper.absolutePos(VOLCANO))) {
+			helper.fail("The feature placed nothing");
+		}
+		helper.assertBlockPresent(LavaRegistry.VOLCANO_VENT, VOLCANO.above(floor()));
+		helper.assertBlockPresent(Blocks.LAVA, VOLCANO.above(floor() + 1));
+		helper.succeed();
+	}
+
+	/** A lava bomb lands as magma or basalt, and it stays. */
+	@GameTest(structure = AREA, maxTicks = 400)
+	public void bombLeavesRubbleThatStays(GameTestHelper helper) {
+		Volcano.throwBomb(helper.getLevel(), helper.absolutePos(VOLCANO), 6);
+		helper.runAfterDelay(60 + gone(LavaData.rules().temporary().lava()), () -> {
+			for (int dx = -16; dx <= 16; dx++)
+				for (int dz = -16; dz <= 16; dz++)
+					for (int y = 1; y <= 2; y++) {
+						BlockPos p = VOLCANO.offset(dx, y - 1, dz);
+						var state = helper.getBlockState(p);
+						if (!state.is(Blocks.MAGMA_BLOCK) && !state.is(Blocks.BASALT)) continue;
+						if (TemporaryBlocks.isTemporary(helper.getLevel(), helper.absolutePos(p))) helper.fail("The rubble is temporary");
+						helper.succeed();
+						return;
+					}
+			helper.fail("The bomb left no rubble");
+		});
+	}
+
+	/** With mobGriefing off a bomb leaves nothing. */
+	@GameTest(structure = AREA, maxTicks = 20)
+	public void noRubbleWithoutMobGriefing(GameTestHelper helper) {
+		var rules = helper.getLevel().getGameRules();
+		rules.set(GameRules.MOB_GRIEFING, false, helper.getLevel().getServer());
+		Volcano.rubble(helper.getLevel(), helper.absolutePos(VOLCANO));
+		rules.set(GameRules.MOB_GRIEFING, true, helper.getLevel().getServer());
+		helper.assertBlockPresent(Blocks.AIR, VOLCANO);
 		helper.succeed();
 	}
 }

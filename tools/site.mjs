@@ -5,6 +5,7 @@ import { copyFile, mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { build } from './build.mjs';
 import { render } from './render.mjs';
+import { volcanoPicture } from './volcano-art.mjs';
 import { LANGUAGES, STRINGS } from '../src/i18n.mjs';
 import { RULES } from '../src/rules.mjs';
 import { firstFrame, upscale } from '../src/lib/png.mjs';
@@ -27,6 +28,7 @@ for (const item of items) await writeFile(join(OUT, 'img', 'items', `${item.id}.
 await writeFile(join(OUT, 'img', 'items', `${cannon.cannon.id}.png`), render(cannon.geo.geometry, cannon.texture, { yaw: 35, size: 128 }));
 // A full tank, and the first frame of each lava lamp.
 for (const b of blocks) await writeFile(join(OUT, 'img', 'blocks', `${b.id}.png`), upscale(b.tank ? b.sides.at(-1) : firstFrame(b.texture), 4));
+await writeFile(join(OUT, 'img', 'volcano.png'), volcanoPicture(0, RULES.volcano, 560));
 await copyFile(join(RP, 'pack_icon.png'), join(OUT, 'img', 'icon.png'));
 await copyFile(join(RP, 'pack_icon.png'), join(OUT, 'favicon.png'));
 
@@ -166,6 +168,8 @@ h3.edition { margin: 18px 0 10px; font: 700 1.15rem/1.2 system-ui, -apple-system
 .stats dd { margin: 0; font-weight: 700; }
 .lede + .features { margin-top: 0; }
 .portrait img { width: 100%; height: auto; }
+.volcano { display: grid; place-items: center; margin: 0 0 16px; padding: 16px; border-radius: 12px; background: linear-gradient(180deg, #2a0e06, #5a1a0a); }
+.volcano img { width: 100%; max-width: 560px; height: auto; image-rendering: pixelated; }
 .card-body { padding: 14px 16px 16px; }
 .card h3 { margin: 0; font: 700 1.3rem/1.2 system-ui, -apple-system, "Segoe UI", sans-serif; }
 .card p { margin: 0 0 10px; }
@@ -260,6 +264,15 @@ ${t.gear.map(([title, text]) => card(title, esc(text))).join('\n')}
     <h2>${esc(t.blocksTitle)}</h2>
     <div class="features">
 ${t.blocks.map(([title, text]) => card(title, esc(text))).join('\n')}
+    </div>
+  </section>
+
+  <section id="volcanoes">
+    <h2>${esc(t.volcanoTitle)}</h2>
+    <p class="lede">${esc(t.volcanoLede)}</p>
+    <div class="volcano"><img src="${up}img/volcano.png" alt="" loading="lazy" width="560"></div>
+    <div class="features">
+${t.volcano.map(([title, text]) => card(title, text)).join('\n')}
     </div>
   </section>
 

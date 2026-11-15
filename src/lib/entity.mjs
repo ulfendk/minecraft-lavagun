@@ -237,6 +237,8 @@ export const PROJECTILES = [
   // The cannon's ball is flown by scripts/cannon.js (Bedrock's own projectiles slow down
   // too much for the cannon's ranges), along the same path as on Java.
   { id: 'lava_ball', size: [6, 6, 6], gravity: 0.05, power: 1.0, material: 'lava', scripted: true },
+  // A volcano's lava bomb, flown the same way (scripts/volcano.js).
+  { id: 'volcano_bomb', size: [8, 8, 8], gravity: 0.05, power: 1.0, material: 'lava', scripted: true },
   { id: 'magma_grenade', size: [3, 3, 3], gravity: 0.05, power: 1.0, material: 'grenade' },
 ];
 

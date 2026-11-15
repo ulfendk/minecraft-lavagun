@@ -7,6 +7,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import dk.ulfen.lavagun.block.LavaTankBlock;
+import dk.ulfen.lavagun.block.VolcanoVentBlock;
 import dk.ulfen.lavagun.entity.LavaCannon;
 import dk.ulfen.lavagun.entity.LavaCreature;
 import dk.ulfen.lavagun.entity.LavaShot;
@@ -18,6 +19,7 @@ import dk.ulfen.lavagun.item.LavaGunItem;
 import dk.ulfen.lavagun.item.MagmaGrenadeItem;
 import dk.ulfen.lavagun.item.MagmaSprayerItem;
 import dk.ulfen.lavagun.item.MagmasteelSwordItem;
+import dk.ulfen.lavagun.world.VolcanoFeature;
 import net.fabricmc.fabric.api.biome.v1.BiomeModifications;
 import net.fabricmc.fabric.api.biome.v1.BiomeSelectionContext;
 import net.fabricmc.fabric.api.biome.v1.BiomeSelectors;
@@ -30,6 +32,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.BiomeTags;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.EntityType;
@@ -50,6 +53,7 @@ import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.material.MapColor;
 
@@ -59,6 +63,7 @@ public final class LavaRegistry {
 	public static EntityType<LavaShot> LAVA_BLOB;
 	public static EntityType<LavaShot> OBSIDIAN_BLOB;
 	public static EntityType<LavaShot> LAVA_BALL;
+	public static EntityType<LavaShot> VOLCANO_BOMB;
 	public static EntityType<LavaCannon> LAVA_CANNON;
 	public static EntityType<MagmaGrenade> MAGMA_GRENADE_ENTITY;
 	public static EntityType<MagmaGolem> MAGMA_GOLEM;
@@ -69,6 +74,7 @@ public final class LavaRegistry {
 	public static Item MAGMASTEEL_HELMET, MAGMASTEEL_CHESTPLATE, MAGMASTEEL_LEGGINGS, MAGMASTEEL_BOOTS;
 	public static Item MAGMA_GOLEM_SPAWN_EGG, LAVA_SLUG_SPAWN_EGG;
 	public static LavaTankBlock LAVA_TANK;
+	public static VolcanoVentBlock VOLCANO_VENT;
 	/** Every block and its item, in creative-tab order. */
 	public static final List<Item> BLOCK_ITEMS = new ArrayList<>();
 
@@ -91,6 +97,7 @@ public final class LavaRegistry {
 		LAVA_BLOB = entity("lava_blob", EntityType.Builder.<LavaShot>of(LavaShot::new, MobCategory.MISC).noLootTable().fireImmune().sized(0.35F, 0.35F).clientTrackingRange(4).updateInterval(10));
 		OBSIDIAN_BLOB = entity("obsidian_blob", EntityType.Builder.<LavaShot>of(LavaShot::new, MobCategory.MISC).noLootTable().fireImmune().sized(0.35F, 0.35F).clientTrackingRange(4).updateInterval(10));
 		LAVA_BALL = entity("lava_ball", EntityType.Builder.<LavaShot>of(LavaShot::new, MobCategory.MISC).noLootTable().fireImmune().sized(0.4F, 0.4F).clientTrackingRange(8).updateInterval(5));
+		VOLCANO_BOMB = entity("volcano_bomb", EntityType.Builder.<LavaShot>of(LavaShot::new, MobCategory.MISC).noLootTable().fireImmune().sized(0.5F, 0.5F).clientTrackingRange(10).updateInterval(5));
 		LAVA_CANNON = entity(LavaData.rules().cannon().id(), EntityType.Builder.of(LavaCannon::new, MobCategory.MISC).fireImmune().sized(1.4F, 1.4F).clientTrackingRange(10));
 		FabricDefaultAttributeRegistry.register(LAVA_CANNON, LavaCannon.createAttributes());
 		MAGMA_GRENADE_ENTITY = entity("magma_grenade", EntityType.Builder.<MagmaGrenade>of(MagmaGrenade::new, MobCategory.MISC).noLootTable().fireImmune().sized(0.25F, 0.25F).clientTrackingRange(4).updateInterval(10));
@@ -129,6 +136,9 @@ public final class LavaRegistry {
 			block("lava_lamp_" + colour, Block::new, BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_ORANGE).strength(0.5F).sound(SoundType.GLASS).lightLevel(s -> 15));
 		}
 		LAVA_TANK = block("lava_tank", LavaTankBlock::new, BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(3.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops().noOcclusion());
+
+		VOLCANO_VENT = block(LavaData.rules().volcano().id(), VolcanoVentBlock::new, BlockBehaviour.Properties.of().mapColor(MapColor.COLOR_ORANGE).strength(50.0F, 1200.0F).sound(SoundType.BASALT).requiresCorrectToolForDrops().lightLevel(s -> 15));
+		volcanoes();
 
 		CreativeModeTab tab = FabricCreativeModeTab.builder()
 			.title(Component.translatable("itemGroup.lavagun"))
@@ -170,6 +180,21 @@ public final class LavaRegistry {
 		T block = Registry.register(BuiltInRegistries.BLOCK, key, factory.apply(props.setId(key)));
 		BLOCK_ITEMS.add(item(name, p -> new BlockItem(block, p), new Item.Properties().useBlockDescriptionPrefix()));
 		return block;
+	}
+
+	/** Volcanoes generate with new land: rarely anywhere on land, more often in the mountains and the basalt deltas. */
+	private static void volcanoes() {
+		Registry.register(BuiltInRegistries.FEATURE_TYPE, id("volcano"), VolcanoFeature.CODEC);
+		Predicate<BiomeSelectionContext> land = BiomeSelectors.foundInOverworld()
+			.and(BiomeSelectors.tag(BiomeTags.IS_OCEAN).negate()).and(BiomeSelectors.tag(BiomeTags.IS_RIVER).negate())
+			.and(BiomeSelectors.tag(BiomeTags.IS_BEACH).negate()).and(BiomeSelectors.tag(BiomeTags.IS_MOUNTAIN).negate());
+		placeVolcanoes("volcano_land", land);
+		placeVolcanoes("volcano_mountains", BiomeSelectors.tag(BiomeTags.IS_MOUNTAIN));
+		placeVolcanoes("volcano_basalt_deltas", BiomeSelectors.includeByKey(Biomes.BASALT_DELTAS));
+	}
+
+	private static void placeVolcanoes(String name, Predicate<BiomeSelectionContext> biomes) {
+		BiomeModifications.addFeature(biomes, GenerationStep.Decoration.SURFACE_STRUCTURES, ResourceKey.create(Registries.PLACED_FEATURE, id(name)));
 	}
 
 	/** Biome names used in the shared spec -> biome selectors. */

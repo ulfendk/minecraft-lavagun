@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.4.0] - 2026-11-15
+
+### Added
+- Volcanoes (Danish: vulkaner): cones of basalt, blackstone, tuff and magma about 29 blocks across and 18 high, with a lake of lava in the crater that runs over a notch in the rim and down the side all the time. Every 2–8 minutes, when a player is within 64 blocks, a volcano rumbles and throws out lava bombs for 6 s, up to 28 blocks away: 6 damage and 4 s of fire on a hit, and they land as magma blocks and basalt that stay. No rubble or fire with `mobGriefing` off.
+- Volcanoes generate in newly explored chunks: rarely anywhere on Overworld land, more often in mountains, and in the Nether's basalt deltas. Land you have already explored is never changed.
+- Volcano Vent (Danish: Vulkanåbning), crafted from 4 magma blocks, 4 basalt and a magma core: put it down and a volcano grows round it. Mining the vent stops the eruptions.
+
+### Changed
+- The lava cannon's balls and the volcanoes' bombs share one flight path on Bedrock (`scripts/flight.js`).
+
 ## [0.3.0] - 2026-11-15
 
 ### Added
