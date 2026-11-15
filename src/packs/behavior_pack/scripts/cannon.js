@@ -9,8 +9,8 @@ import { system, world } from '@minecraft/server';
 import { RULES } from './data.js';
 import { hurt, mayHurt } from './guns.js';
 import { placeLasting } from './lava.js';
-import { nextRange, shotSpeed } from './temp.js';
-import { add, dist, floor, isCreative, mayGrief, NS, scale, takeItems, tell } from './util.js';
+import { canReplace, nextRange, shotSpeed } from './temp.js';
+import { add, floor, hitbox, isCreative, mayGrief, NS, scale, takeItems, tell } from './util.js';
 
 const C = RULES.cannon;
 const CANNON = `${NS}:${C.id}`;
@@ -72,32 +72,38 @@ function lastingLava(dimension, pos) {
   return placeLasting(dimension, pos, 'minecraft:lava') || placeLasting(dimension, add(pos, { x: 0, y: 1, z: 0 }), 'minecraft:lava');
 }
 
+/** Does the ball stop in this block? Not in air, water, lava or grass and flowers. */
+function stops(block) {
+  return !!block && !block.isAir && !block.isLiquid && !canReplace(block.typeId);
+}
+
+/** Is `p` inside `entity`'s hitbox (give or take the ball's size)? */
+function inside(entity, p) {
+  const { min, max } = hitbox(entity);
+  const r = 0.2;
+  return p.x > min[0] - r && p.x < max[0] + r && p.y > min[1] - r && p.y < max[1] + r && p.z > min[2] - r && p.z < max[2] + r;
+}
+
 /**
- * Where the ball hits in this tick's move, if anywhere: the nearer of a mob and a block.
- * The rays look a little further than the move (a short ray can miss the block it
- * ends in), and only hits within the move count.
+ * Where the ball hits in this tick's move, if anywhere: it goes along the move in short
+ * steps and stops at the first mob or solid block. (Bedrock's raycasts miss short hops.)
  */
 function hitThisTick(s) {
   const length = Math.hypot(s.vel.x, s.vel.y, s.vel.z);
-  const dir = scale(s.vel, 1 / length);
-  const reach = length + 2;
-  let hit = null;
+  const steps = Math.max(1, Math.ceil(length / 0.25));
+  let before = s.pos;
   try {
-    const block = s.dimension.getBlockFromRay(s.pos, dir, { maxDistance: reach, includePassableBlocks: false });
-    if (block) {
-      const at = add(block.block.location, block.faceLocation);
-      const distance = dist(s.pos, at);
-      if (distance <= length) hit = { distance, block, at, dir };
+    const near = s.dimension.getEntities({ location: s.pos, maxDistance: length + 3, excludeTypes: [BALL, CANNON] })
+      .filter((e) => e.id !== s.owner?.id && mayHurt(e, s.owner));
+    for (let k = 1; k <= steps; k++) {
+      const p = add(s.pos, scale(s.vel, k / steps));
+      const entity = near.find((e) => inside(e, p));
+      if (entity) return { entity, at: p };
+      if (stops(s.dimension.getBlock(floor(p)))) return { at: p, before };
+      before = p;
     }
-    for (const { entity, distance } of s.dimension.getEntitiesFromRay(s.pos, dir, { maxDistance: reach, excludeTypes: [BALL, CANNON] })) {
-      if (distance > length) break;
-      if (entity.id === s.owner?.id || !mayHurt(entity, s.owner)) continue;
-      if (!hit || distance < hit.distance) hit = { distance, entity, at: add(s.pos, scale(dir, distance)) };
-      break;
-    }
-  } catch (e) {
-    }
-  return hit;
+  } catch {}
+  return null;
 }
 
 function land(s, hit) {
@@ -111,8 +117,8 @@ function land(s, hit) {
     hurt(hit.entity, C.damage, s.owner, C.fire);
     lastingLava(dimension, feet);
   } else {
-    // The block the ball was in just before it hit (the ray's face is not to be trusted).
-    lastingLava(dimension, floor(add(hit.at, scale(hit.dir, -0.05))));
+    // The block the ball was in just before it hit.
+    lastingLava(dimension, floor(hit.before));
   }
 }
 
