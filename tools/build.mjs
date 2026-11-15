@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { CREATURES } from '../src/creatures.mjs';
+import { cannon } from '../src/cannon.mjs';
 import { BLOCK_RECIPES, BLOCKS, bedrockBlock, blockTextures } from '../src/blocks.mjs';
 import { buildItem, ITEMS, RECIPES } from '../src/items.mjs';
 import { langEntries, LOCALES } from '../src/i18n.mjs';
@@ -12,8 +13,8 @@ import { RULES } from '../src/rules.mjs';
 import { armorLayer, lavaBallTexture, obsidianBallTexture } from '../src/art.mjs';
 import { animationFile } from '../src/lib/anim.mjs';
 import {
-  buildAnimationControllers, buildClientEntity, buildCreature, buildEntitySounds, buildLoot, buildProjectile,
-  buildProjectileClient, buildRenderController, buildSpawnRules, projectileModel, PROJECTILES,
+  buildAnimationControllers, buildCannon, buildCannonClient, buildClientEntity, buildCreature, buildEntitySounds, buildLoot,
+  buildProjectile, buildProjectileClient, buildRenderController, buildSpawnRules, projectileModel, PROJECTILES,
 } from '../src/lib/entity.mjs';
 import { MIN_ENGINE, NS, PACK_NAME, SCRIPT_SERVER_VERSION } from '../src/lib/constants.mjs';
 import { packIcon } from '../src/lib/icon.mjs';
@@ -81,6 +82,12 @@ export function buildCreatureArt() {
   }));
 }
 
+/** Geometry, texture and animations of the lava cannon (shared like the creatures'). */
+export function buildCannonArt() {
+  const geo = buildGeometry(`geometry.${NS}.${cannon.id}`, cannon.model);
+  return { cannon, geo, texture: paintTexture(geo, cannon.materials), animations: animationFile(NS, cannon.id, cannon.anims) };
+}
+
 function attachable(item) {
   const [, geometry, layer, visible] = ARMOR_GEOMETRY[item.piece];
   return {
@@ -130,6 +137,16 @@ export async function build({ quiet = false } = {}) {
     sounds[`${NS}:${c.id}`] = buildEntitySounds(c);
   }
   await write(join(RP, 'sounds.json'), { entity_sounds: { entities: sounds } });
+
+  // The lava cannon
+  const cannonArt = buildCannonArt();
+  await write(join(BP, 'entities', `${cannon.id}.json`), buildCannon(cannon));
+  await write(join(BP, 'loot_tables', 'entities', `${NS}_${cannon.id}.json`), buildLoot({ loot: [{ item: `${NS}:${cannon.id}`, min: 1, max: 1 }] }));
+  await write(join(RP, 'models', 'entity', `${cannon.id}.geo.json`), cannonArt.geo.geometry);
+  await write(join(RP, 'textures', 'entity', NS, `${cannon.id}.png`), cannonArt.texture);
+  await write(join(RP, 'animations', `${cannon.id}.animation.json`), cannonArt.animations);
+  await write(join(RP, 'entity', `${cannon.id}.entity.json`), buildCannonClient(cannon));
+  await write(join(RP, 'render_controllers', `${cannon.id}.render_controllers.json`), buildRenderController(cannon.id));
 
   // Projectiles: the shots and the thrown grenade.
   for (const [i, p] of PROJECTILES.entries()) {
@@ -202,14 +219,14 @@ export async function build({ quiet = false } = {}) {
   for (const pack of [BP, RP]) await write(join(pack, 'texts', 'languages.json'), LOCALES);
 
   await buildJava({
-    creatures, items: ITEMS, blocks: BLOCKS, blockTextures: blockTextureFiles, recipes, langs, icon, armor, rules: RULES,
+    creatures, cannon: cannonArt, items: ITEMS, blocks: BLOCKS, blockTextures: blockTextureFiles, recipes, langs, icon, armor, rules: RULES,
     OUT: join(ROOT, 'java', 'src', 'generated', 'resources'),
   });
 
   if (!quiet) {
     console.log(`Built ${PACK_NAME} ${pkg.version}: ${CREATURES.length} creatures, ${PROJECTILES.length} projectiles, ${ITEMS.length} items, ${BLOCKS.length} blocks, ${recipes.length} recipes; Java resources in java/src/generated/resources`);
   }
-  return { creatures, items: ITEMS, blocks: BLOCKS, version: pkg.version };
+  return { creatures, cannon: cannonArt, items: ITEMS, blocks: BLOCKS, version: pkg.version };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

@@ -101,6 +101,51 @@ public final class Lava {
 		return set;
 	}
 
+	/**
+	 * A block that stays (lava from the lava cannon): only where `replace` allows, and
+	 * never on one of our temporary blocks. True if it was placed.
+	 */
+	public static boolean placeLasting(ServerLevel level, BlockPos pos, BlockState state, java.util.function.Predicate<BlockState> replace) {
+		if (TemporaryBlocks.isTemporary(level, pos) || !replace.test(level.getBlockState(pos))) return false;
+		level.setBlockAndUpdate(pos, state);
+		return true;
+	}
+
+	/** Lava that stays, at `pos` or (if that is taken) just above. Not with mobGriefing off. */
+	public static boolean lastingLava(ServerLevel level, BlockPos pos) {
+		if (!mayGrief(level)) return false;
+		BlockState lava = Blocks.LAVA.defaultBlockState();
+		return placeLasting(level, pos, lava, TemporaryBlocks::replaceable) || placeLasting(level, pos.above(), lava, TemporaryBlocks::replaceable);
+	}
+
+	/**
+	 * How far a shot flies over flat ground: it leaves at `speed` blocks a tick, `angle`
+	 * degrees up, `height` blocks above the ground, and each tick moves, slows by 1 %
+	 * and falls by `gravity`. The same sum as shotRange in src/lib/temp.mjs.
+	 */
+	public static double shotRange(double speed, double angle, double gravity, double height) {
+		double a = Math.toRadians(angle), x = 0, y = height, vx = speed * Math.cos(a), vy = speed * Math.sin(a);
+		for (int t = 0; t < 1200; t++) {
+			x += vx;
+			y += vy;
+			if (y <= 0) return x;
+			vx *= 0.99;
+			vy = vy * 0.99 - gravity;
+		}
+		return x;
+	}
+
+	/** The speed that carries a shot `range` blocks (see shotRange). */
+	public static double shotSpeed(double range, double angle, double gravity, double height) {
+		double lo = 0.05, hi = 8;
+		for (int i = 0; i < 40; i++) {
+			double mid = (lo + hi) / 2;
+			if (shotRange(mid, angle, gravity, height) < range) lo = mid;
+			else hi = mid;
+		}
+		return (lo + hi) / 2;
+	}
+
 	/** Blocks in a flat ring (or a disc) round a centre. */
 	public static List<BlockPos> ring(BlockPos c, int radius, boolean filled) {
 		List<BlockPos> out = new ArrayList<>();

@@ -62,8 +62,12 @@ for f in build/behavior_pack/spawn_rules/*.json; do
 done
 sleep 10
 send scriptevent lavagun:selftest
-# The selftest waits for an obsidian shell and temporary lava to go away (about 10 seconds).
-sleep 25
+# The selftest waits for an obsidian shell and temporary lava to go away and for the
+# cannon's shots to land: wait for its verdict (at most two minutes).
+for _ in $(seq 60); do
+  docker logs "$NAME" 2>&1 | grep -qE "selftest (PASS|FAIL)" && break
+  sleep 2
+done
 
 LOG=$(docker logs "$NAME" 2>&1)
 echo "$LOG" | grep -iE "lava guns|error|warn|\[Scripting\]" | grep -vE "send-command|^\s*$" | tail -100 || true

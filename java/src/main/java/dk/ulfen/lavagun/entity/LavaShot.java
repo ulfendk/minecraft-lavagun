@@ -8,6 +8,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -23,7 +24,8 @@ import net.minecraft.world.phys.HitResult;
 /**
  * A shot from a lava gun. The lava pistol's bolt burns what it hits; the lava gun's
  * blob shuts a mob in obsidian, or splashes lava where it lands; the obsidian gun's
- * blob sets into obsidian that stays. The numbers are in src/rules.mjs (guns.*).
+ * blob sets into obsidian that stays; the lava cannon's ball leaves lava that stays.
+ * The numbers are in src/rules.mjs (guns.* and cannon).
  */
 public class LavaShot extends ThrowableItemProjectile {
 	public LavaShot(EntityType<? extends LavaShot> type, Level level) {
@@ -42,25 +44,35 @@ public class LavaShot extends ThrowableItemProjectile {
 		return this.getType() == LavaRegistry.OBSIDIAN_BLOB;
 	}
 
+	private boolean isBall() {
+		return this.getType() == LavaRegistry.LAVA_BALL;
+	}
+
 	private LavaData.Gun gun() {
 		return LavaData.rules().guns().get(isObsidian() ? "obsidian_gun" : isBlob() ? "lava_gun" : "lava_pistol");
 	}
 
 	@Override
 	protected Item getDefaultItem() {
-		return isObsidian() ? Items.OBSIDIAN : isBlob() ? LavaRegistry.MAGMA_CORE : LavaRegistry.MAGMA_CHARGE;
+		return isBall() ? Items.MAGMA_BLOCK : isObsidian() ? Items.OBSIDIAN : isBlob() ? LavaRegistry.MAGMA_CORE : LavaRegistry.MAGMA_CHARGE;
 	}
 
 	@Override
 	protected double getDefaultGravity() {
-		return gun().gravity();
+		return isBall() ? LavaData.rules().cannon().gravity() : gun().gravity();
+	}
+
+	/** The cannon's ball flies past cannons. */
+	@Override
+	protected boolean canHitEntity(Entity target) {
+		return super.canHitEntity(target) && !(target instanceof LavaCannon);
 	}
 
 	@Override
 	public void tick() {
 		super.tick();
 		if (this.level().isClientSide() && this.tickCount % 2 == 0) {
-			this.level().addParticle(isBlob() || isObsidian() ? ParticleTypes.LAVA : ParticleTypes.FLAME, this.getX(), this.getY(), this.getZ(), 0, 0, 0);
+			this.level().addParticle(isBlob() || isObsidian() || isBall() ? ParticleTypes.LAVA : ParticleTypes.FLAME, this.getX(), this.getY(), this.getZ(), 0, 0, 0);
 		}
 	}
 
@@ -71,6 +83,13 @@ public class LavaShot extends ThrowableItemProjectile {
 		Entity target = hit.getEntity();
 		Entity owner = this.getOwner();
 		if (!Lava.mayHurt(level, target, owner)) return;
+		if (isBall()) {
+			LavaData.Cannon c = LavaData.rules().cannon();
+			BlockPos feet = target.blockPosition();
+			Lava.hurt(level, target, this.damageSources().thrown(this, owner), c.damage(), c.fire());
+			Lava.lastingLava(level, feet);
+			return;
+		}
 		LavaData.Gun g = gun();
 		var source = this.damageSources().thrown(this, owner);
 		if (isObsidian()) {
@@ -94,6 +113,11 @@ public class LavaShot extends ThrowableItemProjectile {
 	protected void onHitBlock(BlockHitResult hit) {
 		super.onHitBlock(hit);
 		if (!(this.level() instanceof ServerLevel level)) return;
+		if (isBall()) {
+			this.playSound(SoundEvents.BUCKET_EMPTY_LAVA, 1.0F, 0.8F);
+			Lava.lastingLava(level, hit.getBlockPos().relative(hit.getDirection()));
+			return;
+		}
 		if (isObsidian()) {
 			Lava.setObsidian(level, hit.getBlockPos().relative(hit.getDirection()), hit.getDirection().getAxis(), null);
 			return;
@@ -111,7 +135,7 @@ public class LavaShot extends ThrowableItemProjectile {
 	protected void onHit(HitResult hit) {
 		super.onHit(hit);
 		if (this.level() instanceof ServerLevel level) {
-			level.sendParticles(ParticleTypes.LAVA, this.getX(), this.getY(), this.getZ(), isBlob() || isObsidian() ? 8 : 3, 0.2, 0.2, 0.2, 0);
+			level.sendParticles(ParticleTypes.LAVA, this.getX(), this.getY(), this.getZ(), isBlob() || isObsidian() || isBall() ? 8 : 3, 0.2, 0.2, 0.2, 0);
 			this.discard();
 		}
 	}

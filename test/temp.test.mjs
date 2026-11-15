@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { canReplace, canSet, disc, falloff, inCone, interior, ring, sameBlock, shellPositions, shouldRestore, splat, TempBlocks } from '../src/lib/temp.mjs';
+import { canReplace, canSet, disc, falloff, inCone, interior, nextRange, ring, sameBlock, shellPositions, shotRange, shotSpeed, shouldRestore, splat, TempBlocks } from '../src/lib/temp.mjs';
+import { RULES } from '../src/rules.mjs';
 
 const pig = { min: [10.05, 0, 10.05], max: [10.95, 0.9, 10.95] };
 
@@ -90,4 +91,16 @@ test('obsidian sets in a plus flat against the face that was hit, and never insi
 test('lava sets into obsidian, water and stone do not', () => {
   for (const id of ['minecraft:lava', 'minecraft:flowing_lava', 'minecraft:air', 'minecraft:short_grass']) assert.ok(canSet(id), id);
   for (const id of ['minecraft:water', 'minecraft:stone', 'minecraft:obsidian']) assert.ok(!canSet(id), id);
+});
+
+test('the lava cannon reaches each of its ranges, and the setting goes round 1 to 5', () => {
+  const { ranges, angle, gravity, muzzle } = RULES.cannon;
+  let last = 0;
+  for (const range of ranges) {
+    const v = shotSpeed(range, angle, gravity, muzzle.up);
+    assert.ok(v > last, `faster for ${range}`);
+    assert.ok(Math.abs(shotRange(v, angle, gravity, muzzle.up) - range) < 0.5, `${range} blocks`);
+    last = v;
+  }
+  assert.deepEqual([1, 2, 3, 4, 5].map((n) => nextRange(n, 5)), [2, 3, 4, 5, 1]);
 });

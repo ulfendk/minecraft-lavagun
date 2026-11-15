@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.3.0] - 2026-11-15
+
+### Added
+- Lava Cannon (Danish: Lavabombarde): a plump medieval bombard on a wheeled carriage. Put it down, and use it to fire a ball of lava that leaves lava that stays where it lands. It turns to where you look; sneak and use it to pick the range from 1 to 5 (8, 16, 24, 32 or 40 blocks). A direct hit does 8 damage and burns for 5 s. Two lava cells a shot, one shot every 2 s. Only players can break it, and it drops itself. No lava with `mobGriefing` off.
+
 ## [0.2.0] - 2026-11-14
 
 ### Added

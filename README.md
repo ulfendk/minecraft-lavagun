@@ -1,6 +1,6 @@
 # Lava Guns
 
-Lava guns for Minecraft – a **Bedrock add-on** and a **Java Edition mod (Fabric)**. A lava pistol, a lava gun that shuts mobs in obsidian, an obsidian gun that builds with lasting obsidian, a magma sprayer and magma grenades, magmasteel tools and armour, lava lamps, a lava tank, and two creatures of the Nether.
+Lava guns for Minecraft – a **Bedrock add-on** and a **Java Edition mod (Fabric)**. A lava pistol, a lava gun that shuts mobs in obsidian, an obsidian gun that builds with lasting obsidian, a lava cannon, a magma sprayer and magma grenades, magmasteel tools and armour, lava lamps, a lava tank, and two creatures of the Nether.
 
 **Website (English and Danish):** https://ulfendk.github.io/minecraft-lavagun/ · part of [all our mods](https://ulfendk.github.io/minecraft-index/)
 
@@ -12,9 +12,11 @@ Lava guns for Minecraft – a **Bedrock add-on** and a **Java Edition mod (Fabri
 | Lava Gun – direct hit | 8 (4 ♥) and **5 s in an obsidian shell** | 5 s after release | 2 lava cells |
 | Lava Gun – miss | 4 within 2 blocks, plus temporary lava | 3 s | |
 | Obsidian Gun | 6 (3 ♥), and up to 5 blocks of **obsidian that stays** where it lands (also on lava) | 3 s | 2 lava cells |
+| Lava Cannon (placed) | 8 (4 ♥), and **lava that stays** where it lands; range 1–5 = 8–40 blocks | 5 s | 2 lava cells |
 | Magma Sprayer (hold) | about 5 a second, 6 blocks ahead | 4 s | 1 magma charge per 2 s |
 | Magma Grenade (throw) | 6 at the centre, out to 3 blocks, plus a ring of temporary lava | 4 s | – |
 
+- **Lava cannon:** put it down, then *use* it to fire – it turns to where you look. *Sneak + use* steps the range 1 → 5 → 1 (8, 16, 24, 32, 40 blocks). Only players can break it (it drops itself).
 - **Obsidian shell:** a hollow shell of obsidian round the mob (it stands in air, so it does not suffocate). It is gone after 5 s and the mob burns. Ender Dragon, Wither, Warden, ravagers and ghasts are too big; a mob just let out cannot be shut in again for 3 s; mined shell blocks drop nothing.
 - **Temporary lava** disappears after 6 s and only replaces air, grass and flowers. With `mobGriefing` off no lava or obsidian is placed (the lava gun freezes the mob instead). Players are only hurt with PvP on.
 - **Magmasteel** (iron + magma cream + blaze powder): sword that sets things on fire, pickaxe that smelts ores as it mines, axe, shovel; full armour gives fire resistance, and the boots harden lava underfoot into basalt (lava walker).

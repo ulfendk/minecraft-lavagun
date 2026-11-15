@@ -16,13 +16,15 @@ const [owner, name] = repo.split('/');
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-const { creatures, items, blocks, version } = await build({ quiet: true });
+const { creatures, cannon, items, blocks, version } = await build({ quiet: true });
 for (const dir of ['creatures', 'items', 'blocks']) await mkdir(join(OUT, 'img', dir), { recursive: true });
 
 for (const { creature: c, geo, texture } of Object.values(creatures)) {
   await writeFile(join(OUT, 'img', 'creatures', `${c.id}.png`), render(geo.geometry, texture, { yaw: 35, size: 320 }));
 }
 for (const item of items) await writeFile(join(OUT, 'img', 'items', `${item.id}.png`), upscale(item.icon, 4));
+// The cannon is shown as itself, not its icon.
+await writeFile(join(OUT, 'img', 'items', `${cannon.cannon.id}.png`), render(cannon.geo.geometry, cannon.texture, { yaw: 35, size: 128 }));
 // A full tank, and the first frame of each lava lamp.
 for (const b of blocks) await writeFile(join(OUT, 'img', 'blocks', `${b.id}.png`), upscale(b.tank ? b.sides.at(-1) : firstFrame(b.texture), 4));
 await copyFile(join(RP, 'pack_icon.png'), join(OUT, 'img', 'icon.png'));
@@ -50,6 +52,10 @@ function page(lang) {
     if (RULES.guns[id]) {
       const g = RULES.guns[id];
       return [[t.statDamage, t.hearts(g.damage)], [t.statFire, t.seconds(g.fire)], [t.statAmmo, `${g.ammoPerShot} × ${itemName(g.ammo)}`]];
+    }
+    if (id === RULES.cannon.id) {
+      const c = RULES.cannon;
+      return [[t.statDamage, t.hearts(c.damage)], [t.statFire, t.seconds(c.fire)], [t.statRange, t.blockRange(c.ranges[0], c.ranges.at(-1))], [t.statAmmo, `${c.ammoPerShot} × ${itemName(c.ammo)}`]];
     }
     if (id === RULES.sprayer.id) {
       const r = RULES.sprayer;

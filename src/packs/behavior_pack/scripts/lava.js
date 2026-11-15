@@ -40,21 +40,25 @@ export function placeTemp(dimension, pos, type, seconds, { restore = 'minecraft:
 }
 
 /**
- * Obsidian that stays (the obsidian gun): where a shot may go, or on lava, but never
- * on one of our temporary blocks. True if it was placed.
+ * A block that stays (obsidian from the obsidian gun, lava from the lava cannon): only
+ * where `replace(typeId)` allows, and never on one of our temporary blocks. True if
+ * it was placed.
  */
-export function placeObsidian(dimension, pos) {
+export function placeLasting(dimension, pos, type, replace = canReplace) {
   const e = at(dimension, pos);
   if (temp.has(e)) return false;
   try {
     const block = dimension.getBlock(e);
-    if (!block || !canSet(block.typeId)) return false;
-    block.setType('minecraft:obsidian');
+    if (!block || !replace(block.typeId)) return false;
+    block.setType(type);
     return true;
   } catch {
     return false;
   }
 }
+
+/** Obsidian that stays: where a shot may go, or on lava. */
+export const placeObsidian = (dimension, pos) => placeLasting(dimension, pos, 'minecraft:obsidian', canSet);
 
 function sweep() {
   for (const e of temp.tick(SWEEP)) {

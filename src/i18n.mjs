@@ -1,6 +1,7 @@
 // In-game texts (both editions) and website texts, in English and Danish.
 // Item, block and creature names live with their specs as [English, Danish].
 import { NS } from './lib/constants.mjs';
+import { cannon } from './cannon.mjs';
 
 export const LOCALES = ['en_US', 'da_DK'];
 const IDX = { en_US: 0, da_DK: 1 };
@@ -12,6 +13,7 @@ const GAME = {
   lava_bolt: ['Lava Bolt', 'Lavaskud'],
   lava_blob: ['Lava Blob', 'Lavaklump'],
   obsidian_blob: ['Obsidian Blob', 'Obsidianklump'],
+  lava_ball: ['Lava Ball', 'Lavakugle'],
   magma_grenade: ['Magma Grenade', 'Magmagranat'],
   no_ammo: ['Out of %s', 'Ikke mere %s'],
   encased: ['Shut in obsidian!', 'Lukket inde i obsidian!'],
@@ -19,6 +21,8 @@ const GAME = {
   tank_full: ['The lava tank is full', 'Lavatanken er fuld'],
   tank_empty: ['The lava tank is empty', 'Lavatanken er tom'],
   fill_bucket: ['Fill Bucket', 'Fyld spand'],
+  fire: ['Fire', 'Fyr'],
+  range: ['Range %s: about %s blocks', 'Rækkevidde %s: cirka %s blokke'],
 };
 
 /** Bedrock .lang entries as [key, value] pairs (tools/java.mjs converts them for Java). */
@@ -32,6 +36,7 @@ export function langEntries(locale, { items, blocks, creatures, projectiles, ver
       [`item.spawn_egg.entity.${NS}:${c.id}.name`, i ? `${c.name[i]}-spawnæg` : `${c.name[i]} Spawn Egg`],
     ]),
     ...projectiles.map((p) => [`entity.${NS}:${p.id}.name`, g(p.id)]),
+    [`entity.${NS}:${cannon.id}.name`, cannon.name[i]],
     ...items.map((it) => [`item.${NS}:${it.id}.name`, it.name[i]]),
     ...blocks.map((b) => [`tile.${NS}:${b.id}.name`, b.name[i]]),
     [`${NS}.hud.no_ammo`, g('no_ammo')],
@@ -40,6 +45,8 @@ export function langEntries(locale, { items, blocks, creatures, projectiles, ver
     [`${NS}.hud.tank_full`, g('tank_full')],
     [`${NS}.hud.tank_empty`, g('tank_empty')],
     [`action.interact.${NS}.fill_bucket`, g('fill_bucket')],
+    [`action.interact.${NS}.fire`, g('fire')],
+    [`${NS}.hud.range`, g('range')],
     [`itemGroup.${NS}`, g('itemGroup')],
   ];
 }
@@ -55,8 +62,8 @@ const en = {
   allMods: 'All our mods',
   name: 'Lava Guns',
   title: 'Lava Guns – Minecraft add-on and mod',
-  description: 'Lava guns for Minecraft Bedrock and Java Edition: a lava pistol, a lava gun that shuts mobs in obsidian, an obsidian gun that builds with lasting obsidian, a magma sprayer and grenades, magmasteel tools and armour, lava lamps, lava tanks and magma creatures. Free download.',
-  tagline: 'A lava pistol, a lava gun that shuts mobs in obsidian, an obsidian gun that builds with lasting obsidian, a magma sprayer and magma grenades. Forge magmasteel tools and armour, light your base with lava lamps, keep lava in a tank – and meet the magma golems of the Nether.',
+  description: 'Lava guns for Minecraft Bedrock and Java Edition: a lava pistol, a lava gun that shuts mobs in obsidian, an obsidian gun that builds with lasting obsidian, a lava cannon, a magma sprayer and grenades, magmasteel tools and armour, lava lamps, lava tanks and magma creatures. Free download.',
+  tagline: 'A lava pistol, a lava gun that shuts mobs in obsidian, an obsidian gun that builds with lasting obsidian, a lava cannon, a magma sprayer and magma grenades. Forge magmasteel tools and armour, light your base with lava lamps, keep lava in a tank – and meet the magma golems of the Nether.',
   download: 'iPad, phone, console & Windows: Bedrock',
   downloadJava: 'Mac & PC: Java Edition',
   which: '<b>Which one do I need?</b> Playing on an <b>iPad</b>, iPhone, Android, Xbox, PlayStation, Switch or Minecraft for Windows? That is <b>Bedrock Edition</b> – take the first download. Playing on a computer with the Minecraft <b>Java Edition</b> launcher (Mac, Windows or Linux)? Take the Java download. Not sure? If you bought Minecraft in the App Store or Google Play, it is Bedrock.',
@@ -94,12 +101,15 @@ const en = {
     lava_pistol: 'A quick bolt of lava. Fast to fire, sets the target on fire. Uses one lava cell a shot.',
     lava_gun: 'A heavy blob of lava. Hit a mob and it is shut in a shell of obsidian for 5 seconds, then burns. Miss, and it splashes lava where it lands. Uses two lava cells a shot.',
     obsidian_gun: 'Fires lava that sets into obsidian where it lands – and the obsidian stays. Build walls and bridges, or plug a lava lake. A mob that is hit burns, and the obsidian sets at its feet. Uses two lava cells a shot.',
+    lava_cannon: 'A fat medieval cannon. Put it down and use it: it turns to where you look and fires a ball of lava, and the lava stays where it lands. Sneak and use it to pick the range from 1 to 5 – 8 to 40 blocks. Uses two lava cells a shot.',
     magma_sprayer: 'Hold it down to spray fire up to 6 blocks ahead. One magma charge lasts 2 seconds.',
     magma_grenade: 'Throw it. It bursts into a ring of lava and burns everything nearby – without breaking any blocks.',
   },
   statDamage: 'Damage',
   statFire: 'Burns',
   statAmmo: 'Ammo',
+  statRange: 'Range',
+  blockRange: (a, b) => `${a}–${b} blocks`,
   seconds: (n) => `${n} s`,
   hearts: (n) => `${n / 2} ♥`,
   perSecond: (n) => `${n / 2} ♥ a second`,
@@ -145,8 +155,8 @@ const da = {
   allMods: 'Alle vores mods',
   name: 'Lavakanoner',
   title: 'Lavakanoner – tilføjelse og mod til Minecraft',
-  description: 'Lavakanoner til Minecraft Bedrock og Java Edition: en lavapistol, en lavakanon, der lukker væsner inde i obsidian, en obsidiankanon, der bygger med obsidian, som bliver, en magmasprøjte og granater, værktøj og rustning af magmastål, lavalamper, lavatanke og magmavæsner. Gratis download.',
-  tagline: 'En lavapistol, en lavakanon, der lukker væsner inde i obsidian, en obsidiankanon, der bygger med obsidian, som bliver, en magmasprøjte og magmagranater. Smed værktøj og rustning af magmastål, oplys din base med lavalamper, gem lava i en tank – og mød Nethers magmagolemmer.',
+  description: 'Lavakanoner til Minecraft Bedrock og Java Edition: en lavapistol, en lavakanon, der lukker væsner inde i obsidian, en obsidiankanon, der bygger med obsidian, som bliver, en lavabombarde, en magmasprøjte og granater, værktøj og rustning af magmastål, lavalamper, lavatanke og magmavæsner. Gratis download.',
+  tagline: 'En lavapistol, en lavakanon, der lukker væsner inde i obsidian, en obsidiankanon, der bygger med obsidian, som bliver, en lavabombarde, en magmasprøjte og magmagranater. Smed værktøj og rustning af magmastål, oplys din base med lavalamper, gem lava i en tank – og mød Nethers magmagolemmer.',
   download: 'iPad, telefon, konsol & Windows: Bedrock',
   downloadJava: 'Mac & pc: Java Edition',
   which: '<b>Hvilken skal jeg bruge?</b> Spiller du på <b>iPad</b>, iPhone, Android, Xbox, PlayStation, Switch eller Minecraft til Windows? Så er det <b>Bedrock Edition</b> – tag den første download. Spiller du på en computer med Minecraft <b>Java Edition</b>-launcheren (Mac, Windows eller Linux)? Så tag Java-downloaden. I tvivl? Hvis Minecraft er købt i App Store eller Google Play, er det Bedrock.',
@@ -184,12 +194,15 @@ const da = {
     lava_pistol: 'Et hurtigt skud lava. Skyder hurtigt og sætter ild til målet. Bruger én lavapatron pr. skud.',
     lava_gun: 'En tung klump lava. Rammer du et væsen, bliver det lukket inde i en skal af obsidian i 5 sekunder og brænder bagefter. Rammer du ved siden af, sprøjter der lava ud, hvor den lander. Bruger to lavapatroner pr. skud.',
     obsidian_gun: 'Skyder lava, der størkner til obsidian, hvor den lander – og obsidianen bliver. Byg mure og broer, eller luk en lavasø. Et væsen, der bliver ramt, brænder, og obsidianen størkner ved dets fødder. Bruger to lavapatroner pr. skud.',
+    lava_cannon: 'En tyk middelalderkanon. Sæt den ned og brug den: Den drejer derhen, hvor du kigger, og skyder en kugle af lava, og lavaen bliver liggende, hvor den lander. Snig og brug den for at vælge rækkevidde fra 1 til 5 – 8 til 40 blokke. Bruger to lavapatroner pr. skud.',
     magma_sprayer: 'Hold den nede for at sprøjte ild op til 6 blokke frem. Én magmaladning holder i 2 sekunder.',
     magma_grenade: 'Kast den. Den springer i en ring af lava og brænder alt i nærheden – uden at ødelægge blokke.',
   },
   statDamage: 'Skade',
   statFire: 'Brænder',
   statAmmo: 'Ammunition',
+  statRange: 'Rækkevidde',
+  blockRange: (a, b) => `${a}–${b} blokke`,
   seconds: (n) => `${n} s`,
   hearts: (n) => `${String(n / 2).replace('.', ',')} ♥`,
   perSecond: (n) => `${String(n / 2).replace('.', ',')} ♥ i sekundet`,

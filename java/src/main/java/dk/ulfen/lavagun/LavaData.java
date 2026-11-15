@@ -17,7 +17,7 @@ import com.google.gson.reflect.TypeToken;
  * Field names match the JSON.
  */
 public final class LavaData {
-	public record Rules(Map<String, Gun> guns, Sprayer sprayer, Grenade grenade, Sword sword, Golem golem, Temporary temporary,
+	public record Rules(Map<String, Gun> guns, Sprayer sprayer, Cannon cannon, Grenade grenade, Sword sword, Golem golem, Temporary temporary,
 		Shell shell, List<String> fireproof, Tank tank, Slug slug, Armor armor) {}
 
 	public record Gun(String ammo, int ammoPerShot, String projectile, float cooldown, float speed, float gravity, float damage, int fire,
@@ -29,6 +29,12 @@ public final class LavaData {
 	public record Obsidian(int radius) {}
 
 	public record Sprayer(String id, String ammo, float range, float cone, int pulseTicks, float damage, int fire, int ticksPerCharge) {}
+
+	/** The lava cannon: `ranges` in blocks for the settings 1 to 5, fired `angle` degrees up from the muzzle. */
+	public record Cannon(String id, String ammo, int ammoPerShot, float cooldown, String projectile, List<Integer> ranges, int startRange,
+		float angle, float gravity, Muzzle muzzle, float damage, int fire, float health) {}
+
+	public record Muzzle(float forward, float up) {}
 
 	public record Grenade(String id, float damage, float radius, int fire, int ring) {}
 

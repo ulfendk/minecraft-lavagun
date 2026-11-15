@@ -91,7 +91,7 @@ async function itemModel(A, id, parent) {
   await write(join(A, 'items', `${id}.json`), { model: { type: 'minecraft:model', model: `${NS}:item/${id}` } });
 }
 
-export async function buildJava({ creatures, items, blocks, blockTextures, recipes, langs, icon, armor, rules, OUT }) {
+export async function buildJava({ creatures, cannon, items, blocks, blockTextures, recipes, langs, icon, armor, rules, OUT }) {
   await rm(OUT, { recursive: true, force: true });
   const A = join(OUT, 'assets', NS);
   const D = join(OUT, 'data', NS);
@@ -105,6 +105,12 @@ export async function buildJava({ creatures, items, blocks, blockTextures, recip
     await itemModel(A, `${c.id}_spawn_egg`, 'minecraft:item/generated');
     await write(join(D, 'loot_table', 'entities', `${c.id}.json`), lootTable(c.loot));
   }
+  // The lava cannon: drawn by GeckoLib like the creatures, and drops itself when broken.
+  const c = cannon.cannon;
+  await write(join(A, 'geckolib', 'models', 'entity', `${c.id}.geo.json`), cannon.geo.geometry);
+  await write(join(A, 'geckolib', 'animations', 'entity', `${c.id}.animation.json`), cannon.animations);
+  await write(join(A, 'textures', 'entity', `${c.id}.png`), cannon.texture);
+  await write(join(D, 'loot_table', 'entities', `${c.id}.json`), { type: 'minecraft:entity', pools: [{ rolls: 1, entries: [{ type: 'minecraft:item', name: `${NS}:${c.id}` }] }] });
   await write(join(D, 'creatures.json'), Object.values(creatures).map(({ creature }) => creatureRecord(creature)));
   await write(join(D, 'rules.json'), rules);
 

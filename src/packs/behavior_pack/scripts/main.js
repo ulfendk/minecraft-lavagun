@@ -1,4 +1,5 @@
 import { system, world } from '@minecraft/server';
+import { setupCannon } from './cannon.js';
 import { setupGear } from './gear.js';
 import { setupGuns } from './guns.js';
 import { setupLava } from './lava.js';
@@ -13,6 +14,7 @@ system.beforeEvents.startup.subscribe(({ blockComponentRegistry }) => {
 world.afterEvents.worldLoad.subscribe(() => {
   setupLava();
   setupGuns();
+  setupCannon();
   setupGear();
   setupSelfTest();
   console.log(`${LOG} loaded`);

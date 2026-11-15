@@ -1,8 +1,10 @@
 // Used by tools/bds-test.sh: `scriptevent lavagun:selftest` checks that the items,
 // blocks and creatures exist, that a pig is shut in obsidian and let out again,
-// that temporary lava goes away, and that the obsidian gun's obsidian stays. It prints PASS or FAIL when it is done.
+// that temporary lava goes away, that the obsidian gun's obsidian stays, and that
+// the lava cannon's lava lands about as far off as its range says, and stays. It prints PASS or FAIL when it is done.
 import { BlockPermutation, ItemStack, system, world } from '@minecraft/server';
 import { BLOCKS, CREATURES, ITEMS, RULES } from './data.js';
+import { fireCannon, getRange, stepRange } from './cannon.js';
 import { encase, isHeld } from './guns.js';
 import { isTemporary, placeObsidian, placeTemp } from './lava.js';
 import { LOG } from './util.js';
@@ -56,6 +58,38 @@ async function selfTest() {
   await later(RULES.temporary.lava * 20 + 20);
   const set = dim.getBlock(pool);
   if (set?.typeId !== 'minecraft:obsidian' || isTemporary(dim, pool)) problems.push(`the obsidian did not stay (${set?.typeId})`);
+
+  // The lava cannon at its shortest and longest range, facing east (+x).
+  const shots = [1, RULES.cannon.ranges.length].map((setting, k) => {
+    const at = { x: 6, y: -60, z: 24 + k * 8 };
+    const cannon = dim.spawnEntity(`lavagun:${RULES.cannon.id}`, { x: at.x + 0.5, y: at.y, z: at.z + 0.5 });
+    return { setting, at, cannon, range: RULES.cannon.ranges[setting - 1] };
+  });
+  await later(5);
+  for (const { setting, cannon } of shots) {
+    cannon.setRotation({ x: 0, y: -90 });
+    while (getRange(cannon) !== setting) stepRange(cannon);
+    if (!fireCannon(cannon)) problems.push('the cannon did not fire');
+  }
+  if (stepRange(shots[0].cannon) !== 2) problems.push('the range did not step from 1 to 2');
+  // Long enough to land (about 3 seconds at the longest range) and to have gone if it were temporary.
+  await later(RULES.temporary.lava * 20 + 20);
+  for (const { at, range } of shots) {
+    let landed = null;
+    for (let dx = 2; dx <= range + 8 && !landed; dx++)
+      for (let dz = -2; dz <= 2 && !landed; dz++)
+        for (let dy = -1; dy <= 2 && !landed; dy++) {
+          const pos = { x: at.x + dx, y: at.y + dy, z: at.z + dz };
+          const b = dim.getBlock(pos);
+          if (b?.typeId === 'minecraft:lava' && b.permutation.getState('liquid_depth') === 0) landed = { pos, dx };
+        }
+    if (!landed) problems.push(`no lava from the cannon at range ${range}`);
+    else if (isTemporary(dim, landed.pos)) problems.push('the cannon\'s lava is temporary');
+    else {
+      console.log(`${LOG} selftest: the cannon's lava landed ${landed.dx} blocks off (range ${range})`);
+      if (Math.abs(landed.dx - range) > Math.max(2, range / 8)) problems.push(`the cannon's lava landed ${landed.dx} blocks off, not about ${range}`);
+    }
+  }
 
   console.log(`${LOG} selftest: ${ITEMS.length} items, ${BLOCKS.length} blocks, ${CREATURES.length} creatures`);
   console.log(problems.length ? `${LOG} selftest FAIL: ${problems.join('; ')}` : `${LOG} selftest PASS`);

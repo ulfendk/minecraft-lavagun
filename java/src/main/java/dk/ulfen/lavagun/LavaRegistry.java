@@ -7,11 +7,13 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import dk.ulfen.lavagun.block.LavaTankBlock;
+import dk.ulfen.lavagun.entity.LavaCannon;
 import dk.ulfen.lavagun.entity.LavaCreature;
 import dk.ulfen.lavagun.entity.LavaShot;
 import dk.ulfen.lavagun.entity.LavaSlug;
 import dk.ulfen.lavagun.entity.MagmaGolem;
 import dk.ulfen.lavagun.entity.MagmaGrenade;
+import dk.ulfen.lavagun.item.LavaCannonItem;
 import dk.ulfen.lavagun.item.LavaGunItem;
 import dk.ulfen.lavagun.item.MagmaGrenadeItem;
 import dk.ulfen.lavagun.item.MagmaSprayerItem;
@@ -56,11 +58,13 @@ public final class LavaRegistry {
 	public static EntityType<LavaShot> LAVA_BOLT;
 	public static EntityType<LavaShot> LAVA_BLOB;
 	public static EntityType<LavaShot> OBSIDIAN_BLOB;
+	public static EntityType<LavaShot> LAVA_BALL;
+	public static EntityType<LavaCannon> LAVA_CANNON;
 	public static EntityType<MagmaGrenade> MAGMA_GRENADE_ENTITY;
 	public static EntityType<MagmaGolem> MAGMA_GOLEM;
 	public static EntityType<LavaSlug> LAVA_SLUG;
 
-	public static Item LAVA_PISTOL, LAVA_GUN, OBSIDIAN_GUN, MAGMA_SPRAYER, MAGMA_GRENADE, LAVA_CELL, MAGMA_CHARGE, MAGMASTEEL_INGOT, MAGMA_CORE;
+	public static Item LAVA_PISTOL, LAVA_GUN, OBSIDIAN_GUN, LAVA_CANNON_ITEM, MAGMA_SPRAYER, MAGMA_GRENADE, LAVA_CELL, MAGMA_CHARGE, MAGMASTEEL_INGOT, MAGMA_CORE;
 	public static Item MAGMASTEEL_SWORD, MAGMASTEEL_PICKAXE, MAGMASTEEL_AXE, MAGMASTEEL_SHOVEL;
 	public static Item MAGMASTEEL_HELMET, MAGMASTEEL_CHESTPLATE, MAGMASTEEL_LEGGINGS, MAGMASTEEL_BOOTS;
 	public static Item MAGMA_GOLEM_SPAWN_EGG, LAVA_SLUG_SPAWN_EGG;
@@ -86,6 +90,9 @@ public final class LavaRegistry {
 		LAVA_BOLT = entity("lava_bolt", EntityType.Builder.<LavaShot>of(LavaShot::new, MobCategory.MISC).noLootTable().fireImmune().sized(0.25F, 0.25F).clientTrackingRange(4).updateInterval(10));
 		LAVA_BLOB = entity("lava_blob", EntityType.Builder.<LavaShot>of(LavaShot::new, MobCategory.MISC).noLootTable().fireImmune().sized(0.35F, 0.35F).clientTrackingRange(4).updateInterval(10));
 		OBSIDIAN_BLOB = entity("obsidian_blob", EntityType.Builder.<LavaShot>of(LavaShot::new, MobCategory.MISC).noLootTable().fireImmune().sized(0.35F, 0.35F).clientTrackingRange(4).updateInterval(10));
+		LAVA_BALL = entity("lava_ball", EntityType.Builder.<LavaShot>of(LavaShot::new, MobCategory.MISC).noLootTable().fireImmune().sized(0.4F, 0.4F).clientTrackingRange(8).updateInterval(5));
+		LAVA_CANNON = entity(LavaData.rules().cannon().id(), EntityType.Builder.of(LavaCannon::new, MobCategory.MISC).fireImmune().sized(1.4F, 1.4F).clientTrackingRange(10));
+		FabricDefaultAttributeRegistry.register(LAVA_CANNON, LavaCannon.createAttributes());
 		MAGMA_GRENADE_ENTITY = entity("magma_grenade", EntityType.Builder.<MagmaGrenade>of(MagmaGrenade::new, MobCategory.MISC).noLootTable().fireImmune().sized(0.25F, 0.25F).clientTrackingRange(4).updateInterval(10));
 		MAGMA_GOLEM = creature(MagmaGolem.ID, MagmaGolem::new, MobCategory.MONSTER);
 		LAVA_SLUG = creature(LavaSlug.ID, LavaSlug::new, MobCategory.CREATURE);
@@ -93,6 +100,7 @@ public final class LavaRegistry {
 		LAVA_PISTOL = item("lava_pistol", p -> new LavaGunItem(p, "lava_pistol"), new Item.Properties().durability(400).repairable(REPAIRS_MAGMASTEEL));
 		LAVA_GUN = item("lava_gun", p -> new LavaGunItem(p, "lava_gun"), new Item.Properties().durability(300).repairable(REPAIRS_MAGMASTEEL));
 		OBSIDIAN_GUN = item("obsidian_gun", p -> new LavaGunItem(p, "obsidian_gun"), new Item.Properties().durability(300).repairable(REPAIRS_MAGMASTEEL));
+		LAVA_CANNON_ITEM = item(LavaData.rules().cannon().id(), LavaCannonItem::new, new Item.Properties().stacksTo(1));
 		MAGMA_SPRAYER = item("magma_sprayer", MagmaSprayerItem::new, new Item.Properties().durability(500).repairable(REPAIRS_MAGMASTEEL));
 		MAGMA_GRENADE = item("magma_grenade", MagmaGrenadeItem::new, new Item.Properties().stacksTo(16));
 		LAVA_CELL = item("lava_cell", Item::new, new Item.Properties());
@@ -126,7 +134,7 @@ public final class LavaRegistry {
 			.title(Component.translatable("itemGroup.lavagun"))
 			.icon(() -> new ItemStack(LAVA_GUN))
 			.displayItems((params, out) -> {
-				for (Item i : new Item[] {LAVA_PISTOL, LAVA_GUN, OBSIDIAN_GUN, MAGMA_SPRAYER, MAGMA_GRENADE, LAVA_CELL, MAGMA_CHARGE, MAGMASTEEL_INGOT, MAGMA_CORE,
+				for (Item i : new Item[] {LAVA_PISTOL, LAVA_GUN, OBSIDIAN_GUN, LAVA_CANNON_ITEM, MAGMA_SPRAYER, MAGMA_GRENADE, LAVA_CELL, MAGMA_CHARGE, MAGMASTEEL_INGOT, MAGMA_CORE,
 					MAGMASTEEL_SWORD, MAGMASTEEL_PICKAXE, MAGMASTEEL_AXE, MAGMASTEEL_SHOVEL,
 					MAGMASTEEL_HELMET, MAGMASTEEL_CHESTPLATE, MAGMASTEEL_LEGGINGS, MAGMASTEEL_BOOTS}) out.accept(i);
 				BLOCK_ITEMS.forEach(out::accept);

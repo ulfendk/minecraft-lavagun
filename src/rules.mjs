@@ -29,6 +29,14 @@ export const RULES = {
     // One pulse every 4 ticks (5 a second); one magma charge lasts 2 seconds of spraying.
     pulseTicks: 4, damage: 1, fire: 4, ticksPerCharge: 40,
   },
+  // The lava cannon: put it down, then use it to fire a ball of lava that stays where
+  // it lands. Sneak and use to pick a range from 1 to 5; the ranges are in blocks on
+  // flat ground, fired at `angle` degrees.
+  cannon: {
+    id: 'lava_cannon', ammo: 'lava_cell', ammoPerShot: 2, cooldown: 2, projectile: 'lava_ball',
+    ranges: [8, 16, 24, 32, 40], startRange: 3, angle: 25, gravity: 0.05, muzzle: { forward: 1.3, up: 1.1 },
+    damage: 8, fire: 5, health: 20,
+  },
   grenade: { id: 'magma_grenade', damage: 6, radius: 3, fire: 4, ring: 2 },
   sword: { fire: 4 },
   golem: { slam: 10, slamRadius: 3, slamLava: 1 },

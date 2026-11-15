@@ -169,6 +169,60 @@ export function buildEntitySounds(c) {
   return { volume: 1.0, pitch: s.pitch, events: { ambient: s.ambient, hurt: s.hurt, death: s.death, step: s.step } };
 }
 
+// ---------------------------------------------------------------- the lava cannon
+
+/**
+ * The lava cannon: it stands where it was put and never moves, despawns or burns.
+ * Only a player's hits break it, and then it drops itself. Using it is heard by
+ * scripts/cannon.js (the interaction only gives touch screens a "Fire" button).
+ */
+export function buildCannon(c) {
+  return {
+    format_version: '1.21.90',
+    'minecraft:entity': {
+      description: { identifier: `${NS}:${c.id}`, is_spawnable: false, is_summonable: true },
+      components: {
+        'minecraft:type_family': { family: [c.id, NS, 'inanimate'] },
+        'minecraft:collision_box': { width: c.size[0], height: c.size[1] },
+        'minecraft:health': { value: c.health, max: c.health },
+        'minecraft:physics': {},
+        'minecraft:pushable': { is_pushable: false, is_pushable_by_piston: true },
+        'minecraft:knockback_resistance': { value: 1 },
+        'minecraft:fire_immune': {},
+        'minecraft:breathable': { breathes_water: true, total_supply: 15, suffocate_time: 0 },
+        'minecraft:persistent': {},
+        'minecraft:nameable': {},
+        'minecraft:loot': { table: `loot_tables/entities/${NS}_${c.id}.json` },
+        'minecraft:damage_sensor': {
+          triggers: [
+            { on_damage: { filters: fam('player') }, cause: 'entity_attack', deals_damage: 'yes' },
+            { cause: 'all', deals_damage: 'no' },
+          ],
+        },
+        'minecraft:interact': {
+          interactions: [{ on_interact: { filters: fam('player') }, swing: true, interact_text: `action.interact.${NS}.fire` }],
+        },
+      },
+    },
+  };
+}
+
+export function buildCannonClient(c) {
+  return {
+    format_version: '1.10.0',
+    'minecraft:client_entity': {
+      description: {
+        identifier: `${NS}:${c.id}`,
+        materials: { default: 'entity_emissive_alpha' },
+        textures: { default: `textures/entity/${NS}/${c.id}` },
+        geometry: { default: `geometry.${NS}.${c.id}` },
+        animations: Object.fromEntries(Object.keys(c.anims).map((n) => [n, `animation.${NS}.${c.id}.${n}`])),
+        render_controllers: [`controller.render.${NS}.${c.id}`],
+      },
+    },
+  };
+}
+
 // ---------------------------------------------------------------- projectiles
 
 /**
@@ -180,6 +234,9 @@ export const PROJECTILES = [
   { id: 'lava_bolt', size: [2, 2, 4], gravity: 0.01, power: 3.2, material: 'lava' },
   { id: 'lava_blob', size: [4, 4, 4], gravity: 0.05, power: 1.6, material: 'lava' },
   { id: 'obsidian_blob', size: [4, 4, 4], gravity: 0.05, power: 1.6, material: 'obsidian' },
+  // The cannon's ball is flown by scripts/cannon.js (Bedrock's own projectiles slow down
+  // too much for the cannon's ranges), along the same path as on Java.
+  { id: 'lava_ball', size: [6, 6, 6], gravity: 0.05, power: 1.0, material: 'lava', scripted: true },
   { id: 'magma_grenade', size: [3, 3, 3], gravity: 0.05, power: 1.0, material: 'grenade' },
 ];
 
@@ -189,6 +246,21 @@ export function projectileModel(p) {
 }
 
 export function buildProjectile(p) {
+  if (p.scripted) {
+    return {
+      format_version: '1.21.90',
+      'minecraft:entity': {
+        description: { identifier: `${NS}:${p.id}`, is_spawnable: false, is_summonable: true },
+        components: {
+          'minecraft:collision_box': { width: 0.25, height: 0.25 },
+          'minecraft:physics': { has_gravity: false, has_collision: false },
+          'minecraft:damage_sensor': { triggers: [{ cause: 'all', deals_damage: 'no' }] },
+          'minecraft:fire_immune': {},
+          'minecraft:pushable': { is_pushable: false, is_pushable_by_piston: false },
+        },
+      },
+    };
+  }
   return {
     format_version: '1.21.90',
     'minecraft:entity': {

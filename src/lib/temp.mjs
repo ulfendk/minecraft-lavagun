@@ -207,3 +207,37 @@ export const SMELT = {
 export function smeltCount(block, random = Math.random) {
   return block.includes('copper_ore') ? 2 + Math.floor(random() * 4) : 1;
 }
+
+// ---------------------------------------------------------------- the lava cannon
+
+/**
+ * How far a shot flies over flat ground: it leaves at `speed` blocks a tick, `angle`
+ * degrees up, `height` blocks above the ground, and each tick moves, slows by 1 %
+ * in the air and falls by `gravity` (as thrown things do in both editions).
+ */
+export function shotRange(speed, angle, gravity, height) {
+  const a = (angle * Math.PI) / 180;
+  let x = 0, y = height, vx = speed * Math.cos(a), vy = speed * Math.sin(a);
+  for (let t = 0; t < 1200; t++) {
+    x += vx;
+    y += vy;
+    if (y <= 0) return x;
+    vx *= 0.99;
+    vy = vy * 0.99 - gravity;
+  }
+  return x;
+}
+
+/** The speed that carries a shot `range` blocks (see shotRange). */
+export function shotSpeed(range, angle, gravity, height) {
+  let lo = 0.05, hi = 8;
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    if (shotRange(mid, angle, gravity, height) < range) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+/** The next range setting after `n`: 1, 2, … `count`, then 1 again. */
+export const nextRange = (n, count) => (n % count) + 1;

@@ -20,7 +20,7 @@ const EXEMPT = new Set(RULES.shell.exempt);
 // ---------------------------------------------------------------- hurting
 
 /** May `attacker` hurt `target`? Not themselves, and other players only with PvP on. */
-function mayHurt(target, attacker) {
+export function mayHurt(target, attacker) {
   if (!target?.isValid || target.id === attacker?.id) return false;
   if (isPlayer(target) && isPlayer(attacker) && !pvp()) return false;
   if (target.typeId === 'minecraft:item' || target.typeId === 'minecraft:xp_orb') return false;

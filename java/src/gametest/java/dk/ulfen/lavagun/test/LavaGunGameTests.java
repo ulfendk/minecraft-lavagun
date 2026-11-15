@@ -5,6 +5,7 @@ import dk.ulfen.lavagun.Lava;
 import dk.ulfen.lavagun.LavaData;
 import dk.ulfen.lavagun.LavaRegistry;
 import dk.ulfen.lavagun.block.LavaTankBlock;
+import dk.ulfen.lavagun.entity.LavaCannon;
 import dk.ulfen.lavagun.entity.LavaShot;
 import dk.ulfen.lavagun.entity.LavaSlug;
 import dk.ulfen.lavagun.world.Encasement;
@@ -92,6 +93,61 @@ public class LavaGunGameTests {
 		Lava.setObsidian(helper.getLevel(), feet, Direction.Axis.Y, pig.getBoundingBox());
 		if (helper.getLevel().getBlockState(feet).is(Blocks.OBSIDIAN)) helper.fail("The pig was set into the obsidian");
 		if (!helper.getLevel().getBlockState(feet.east()).is(Blocks.OBSIDIAN)) helper.fail("No obsidian round the pig");
+		helper.succeed();
+	}
+
+	/** The lava cannon at ranges 1 and 2: the lava lands about that far off, and stays. */
+	@GameTest(structure = AREA, maxTicks = 300)
+	public void cannonLavaLandsAtItsRangeAndStays(GameTestHelper helper) {
+		var rules = LavaData.rules().cannon();
+		for (int setting = 1; setting <= 2; setting++) {
+			LavaCannon cannon = helper.spawn(LavaRegistry.LAVA_CANNON, new BlockPos(2, 1, 6 + setting * 10));
+			cannon.face(-90); // east, +x
+			while (cannon.range() != setting) cannon.stepRange(null);
+			if (!cannon.fire(null)) helper.fail("The cannon did not fire");
+		}
+		helper.runAfterDelay(gone(LavaData.rules().temporary().lava()) + 40, () -> {
+			for (int setting = 1; setting <= 2; setting++) {
+				int range = rules.ranges().get(setting - 1);
+				Integer landed = null;
+				for (int dx = 2; dx <= range + 6 && landed == null; dx++)
+					for (int dz = -2; dz <= 2 && landed == null; dz++)
+						for (int y = 1; y <= 3 && landed == null; y++) {
+							BlockPos pos = new BlockPos(2 + dx, y, 6 + setting * 10 + dz);
+							var fluid = helper.getBlockState(pos).getFluidState();
+							if (fluid.isSource() && helper.getBlockState(pos).is(Blocks.LAVA)) landed = dx;
+						}
+				if (landed == null) helper.fail("No lava from the cannon at range " + range);
+				else if (Math.abs(landed - range) > 2) helper.fail("The lava landed " + landed + " blocks off, not about " + range);
+			}
+			helper.succeed();
+		});
+	}
+
+	/** Sneak-use steps the range round 1 to 5; firing uses two lava cells and then waits. */
+	@GameTest(structure = AREA, maxTicks = 20)
+	public void cannonStepsRangeAndUsesLavaCells(GameTestHelper helper) {
+		LavaCannon cannon = helper.spawn(LavaRegistry.LAVA_CANNON, new BlockPos(30, 1, 30));
+		int count = LavaData.rules().cannon().ranges().size();
+		int start = cannon.range();
+		for (int i = 0; i < count; i++) cannon.stepRange(null);
+		if (cannon.range() != start) helper.fail("The range did not go round");
+		ServerPlayer player = survivalPlayer(helper);
+		if (cannon.fire(player)) helper.fail("Fired with no lava cells");
+		player.getInventory().add(new ItemStack(LavaRegistry.LAVA_CELL, 3));
+		if (!cannon.fire(player)) helper.fail("Did not fire with lava cells");
+		if (player.getInventory().countItem(LavaRegistry.LAVA_CELL) != 1) helper.fail("Did not use two lava cells");
+		if (cannon.fire(player)) helper.fail("Fired again at once");
+		helper.succeed();
+	}
+
+	/** Only a player can break the cannon. */
+	@GameTest(structure = AREA, maxTicks = 20)
+	public void cannonIgnoresOtherDamage(GameTestHelper helper) {
+		LavaCannon cannon = helper.spawn(LavaRegistry.LAVA_CANNON, new BlockPos(34, 1, 30));
+		cannon.hurtServer(helper.getLevel(), helper.getLevel().damageSources().lava(), 100);
+		cannon.hurtServer(helper.getLevel(), helper.getLevel().damageSources().explosion(null, null), 100);
+		if (!cannon.isAlive() || cannon.getHealth() < cannon.getMaxHealth()) helper.fail("The cannon was hurt by lava or an explosion");
 		helper.succeed();
 	}
 

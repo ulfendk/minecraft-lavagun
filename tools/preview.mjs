@@ -1,4 +1,4 @@
-// Renders the creatures (from several sides, walking and attacking) into
+// Renders the creatures (from several sides, walking and attacking) and the lava cannon into
 // build/preview/, plus build/preview/sheet.png with the creatures, every item and
 // every block, which is attached to each release.
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -9,7 +9,7 @@ import { NS } from '../src/lib/constants.mjs';
 import { firstFrame, upscale } from '../src/lib/png.mjs';
 
 const OUT = 'build/preview';
-const { creatures, items, blocks } = await build({ quiet: true });
+const { creatures, cannon, items, blocks } = await build({ quiet: true });
 await mkdir(OUT, { recursive: true });
 
 const CELL = 192;
@@ -24,6 +24,14 @@ for (const { creature: c, geo, texture, animations } of Object.values(creatures)
     ...(get('attack') ? [render(geo.geometry, texture, { yaw: 35, anim: get('attack'), time: 0.3 })] : []),
   ];
   await writeFile(join(OUT, `${c.id}.png`), sheet(views, { cols: 3 }));
+  portraits.push(render(geo.geometry, texture, { yaw: 35, size: CELL }));
+}
+{
+  const { geo, texture, animations } = cannon;
+  const fire = animations.animations[`animation.${NS}.${cannon.cannon.id}.fire`];
+  const views = [35, 325, 90].map((yaw) => render(geo.geometry, texture, { yaw }));
+  views.push(render(geo.geometry, texture, { yaw: 90, anim: fire, time: 0.05 }));
+  await writeFile(join(OUT, `${cannon.cannon.id}.png`), sheet(views, { cols: 2 }));
   portraits.push(render(geo.geometry, texture, { yaw: 35, size: CELL }));
 }
 const icons = items.map((i) => upscale(i.icon, 8));
