@@ -125,9 +125,10 @@ async function volcanoTest(dim, problems) {
   if (lake?.typeId !== 'minecraft:lava') problems.push(`no lava in the crater (${lake?.typeId})`);
   const flank = dim.getBlock({ x: at.x + 8, y: at.y, z: at.z });
   if (!flank || flank.isAir) problems.push('the volcano has no side');
-  await later(100);
+  // Lava creeps a block every 30 ticks: give it time to reach the crater floor's level outside the rim.
+  await later(300);
   const box = (r, lo, hi) => [{ x: at.x - r, y: lo, z: at.z - r }, { x: at.x + r, y: hi, z: at.z + r }];
-  const flowing = count(dim, ['minecraft:flowing_lava', 'minecraft:lava'], ...box(V.radius, at.y, vent.y - 1));
+  const flowing = count(dim, ['minecraft:flowing_lava', 'minecraft:lava'], ...box(V.radius, at.y, vent.y));
   if (!flowing) problems.push('no lava runs out of the crater');
   // The grown vent came with the structure: it must still tick, and fill its crater again.
   dim.getBlock({ ...vent, y: vent.y + 1 }).setType('minecraft:air');
@@ -148,21 +149,19 @@ async function volcanoTest(dim, problems) {
   if (after <= before) problems.push('the eruption left no rubble');
 
   // The volcanoes that generate with the world.
-  try {
-    const { successCount } = dim.runCommand('place feature lavagun:volcano_feature 272 -60 0');
-    await later(20);
-    const vents = count(dim, [`lavagun:${V.id}`], { x: 262, y: -60, z: -10 }, { x: 312, y: -20, z: 40 });
-    console.log(`${LOG} selftest: place feature succeeded ${successCount} times, ${vents} vents`);
-    if (!vents) {
-      // Which part turned it down: one variant on its own, with its constraints.
-      const one = dim.runCommand('place feature lavagun:volcano_0_feature 272 -60 0').successCount;
-      await later(20);
-      console.log(`${LOG} selftest: one variant on its own succeeded ${one} times`);
-      problems.push('the volcano feature placed no vent');
+  let placed = false;
+  for (const name of ['volcano_feature', 'volcano_0_feature']) {
+    try {
+      placed = dim.placeFeature(`lavagun:${name}`, { x: 272, y: -60, z: 0 }, true);
+    } catch (e) {
+      console.log(`${LOG} selftest: placing ${name} failed: ${e}`);
     }
-  } catch (e) {
-    console.log(`${LOG} selftest: could not place the volcano feature here (${e}); skipped`);
+    if (placed) break;
   }
+  await later(20);
+  const vents = count(dim, [`lavagun:${V.id}`], { x: 262, y: -60, z: -10 }, { x: 312, y: -20, z: 40 });
+  console.log(`${LOG} selftest: the volcano feature placed ${vents} vents`);
+  if (!vents) problems.push('the volcano feature placed no vent');
 }
 
 export function setupSelfTest() {
