@@ -21,6 +21,7 @@ import { packIcon } from '../src/lib/icon.mjs';
 import { buildGeometry } from '../src/lib/model.mjs';
 import { paintTexture } from '../src/lib/texture.mjs';
 import { buildJava } from './java.mjs';
+import { volcanoStructure } from './mcstructure.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'build');
@@ -103,6 +104,69 @@ function attachable(item) {
       },
     },
   };
+}
+
+/** Natural blocks a volcano may be built over when it generates; anything else (a village, say) stops it. */
+const VOLCANO_GROUND = [
+  'minecraft:air', 'minecraft:stone', 'minecraft:granite', 'minecraft:diorite', 'minecraft:andesite', 'minecraft:deepslate', 'minecraft:tuff',
+  'minecraft:dirt', 'minecraft:coarse_dirt', 'minecraft:grass_block', 'minecraft:podzol', 'minecraft:mycelium', 'minecraft:gravel', 'minecraft:sand',
+  'minecraft:red_sand', 'minecraft:sandstone', 'minecraft:snow', 'minecraft:snow_layer', 'minecraft:powder_snow', 'minecraft:ice', 'minecraft:packed_ice',
+  'minecraft:calcite', 'minecraft:clay', 'minecraft:terracotta', 'minecraft:short_grass', 'minecraft:tall_grass', 'minecraft:fern', 'minecraft:large_fern',
+  'minecraft:water', 'minecraft:lava', 'minecraft:netherrack', 'minecraft:basalt', 'minecraft:blackstone', 'minecraft:magma', 'minecraft:soul_sand',
+  'minecraft:soul_soil', 'minecraft:copper_ore', 'minecraft:coal_ore', 'minecraft:iron_ore', 'minecraft:flowing_water', 'minecraft:flowing_lava', 'minecraft:fire',
+];
+
+/**
+ * Volcanoes that generate with the world: a few volcano structures (the same shapes
+ * a volcano vent grows), a feature that picks one, and rules for where they go.
+ * Overworld volcanoes have rock under them for uneven ground; the Nether's sit on
+ * the floor they are snapped to.
+ */
+async function buildVolcanoes() {
+  const v = RULES.volcano;
+  const feature = (type, id, body) => ({ format_version: '1.21.40', [type]: { description: { identifier: `${NS}:${id}` }, ...body } });
+  for (const [kind, skirt] of [['volcano', v.skirt], ['volcano_nether', 0]]) {
+    for (let i = 0; i < v.variants; i++) {
+      await write(join(BP, 'structures', NS, `${kind}_${i}.mcstructure`), volcanoStructure(i, v, skirt));
+      await write(join(BP, 'features', `${kind}_${i}_feature.json`), feature('minecraft:structure_template_feature', `${kind}_${i}_feature`, {
+        structure_name: `${NS}:${kind}_${i}`,
+        adjustment_radius: 4,
+        facing_direction: 'random',
+        constraints: { unburied: {}, block_intersection: { block_allowlist: VOLCANO_GROUND } },
+      }));
+    }
+    await write(join(BP, 'features', `${kind}_feature.json`), feature('minecraft:weighted_random_feature', `${kind}_feature`, {
+      features: Array.from({ length: v.variants }, (_, i) => [`${NS}:${kind}_${i}_feature`, 1]),
+    }));
+  }
+  await write(join(BP, 'features', 'volcano_nether_snap_feature.json'), feature('minecraft:snap_to_surface_feature', 'volcano_nether_snap_feature', {
+    feature_to_snap: `${NS}:volcano_nether_feature`, vertical_search_range: 24, surface: 'floor',
+  }));
+  const tag = (value, operator = '==') => ({ test: 'has_biome_tag', operator, value });
+  const square = { distribution: 'uniform', extent: [0, 16] };
+  // The structure is placed by its corner; the ground is measured at its middle.
+  const surface = (chance) => ({
+    iterations: 1, scatter_chance: { numerator: 1, denominator: chance }, coordinate_eval_order: 'xzy',
+    x: square, z: square, y: `q.heightmap(v.worldx + ${v.radius}, v.worldz + ${v.radius}) - ${v.skirt}`,
+  });
+  const rules = {
+    land: { feature: 'volcano_feature', biomes: [{ all_of: [tag('overworld'), tag('ocean', '!='), tag('river', '!='), tag('beach', '!='), tag('mountains', '!=')] }], distribution: surface(v.worldgen.land) },
+    mountains: { feature: 'volcano_feature', biomes: [{ all_of: [tag('overworld'), { any_of: [tag('mountains'), tag('extreme_hills')] }] }], distribution: surface(v.worldgen.mountains) },
+    basalt_deltas: {
+      feature: 'volcano_nether_snap_feature', biomes: [tag('basalt_deltas')],
+      distribution: { iterations: 1, scatter_chance: { numerator: 1, denominator: v.worldgen.basalt_deltas }, x: square, z: square, y: { distribution: 'uniform', extent: [36, 90] } },
+    },
+  };
+  for (const [name, r] of Object.entries(rules)) {
+    await write(join(BP, 'feature_rules', `volcano_${name}.json`), {
+      format_version: '1.21.40',
+      'minecraft:feature_rules': {
+        description: { identifier: `${NS}:volcano_${name}`, places_feature: `${NS}:${r.feature}` },
+        conditions: { placement_pass: 'surface_pass', 'minecraft:biome_filter': r.biomes },
+        distribution: r.distribution,
+      },
+    });
+  }
 }
 
 export async function build({ quiet = false } = {}) {
@@ -189,6 +253,8 @@ export async function build({ quiet = false } = {}) {
   await write(join(RP, 'textures', 'terrain_texture.json'), { resource_pack_name: NS, texture_name: 'atlas.terrain', padding: 8, num_mip_levels: 4, texture_data: terrain });
   await write(join(RP, 'textures', 'flipbook_textures.json'), flipbooks);
   await write(join(RP, 'blocks.json'), { format_version: '1.21.40', ...Object.fromEntries(BLOCKS.map((b) => [`${NS}:${b.id}`, { sound: b.sound }])) });
+
+  await buildVolcanoes();
 
   const recipes = [...RECIPES, ...BLOCK_RECIPES];
   for (const recipe of recipes) {

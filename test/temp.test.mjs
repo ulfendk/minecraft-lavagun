@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { canReplace, canSet, disc, falloff, inCone, interior, nextRange, ring, sameBlock, shellPositions, shotRange, shotSpeed, shouldRestore, splat, TempBlocks } from '../src/lib/temp.mjs';
+import {
+  bombSpeed, canReplace, canSet, disc, falloff, hash01, inCone, interior, nextRange, notchAngle, ring, sameBlock, shellPositions, shotRange, shotSpeed,
+  shouldRestore, splat, TempBlocks, volcanoBlock, volcanoColumns,
+} from '../src/lib/temp.mjs';
 import { RULES } from '../src/rules.mjs';
 
 const pig = { min: [10.05, 0, 10.05], max: [10.95, 0.9, 10.95] };
@@ -103,4 +106,47 @@ test('the lava cannon reaches each of its ranges, and the setting goes round 1 t
     last = v;
   }
   assert.deepEqual([1, 2, 3, 4, 5].map((n) => nextRange(n, 5)), [2, 3, 4, 5, 1]);
+});
+
+test('a volcano: a cone round a crater of lava, the vent in the middle, all within its radius', () => {
+  const v = RULES.volcano;
+  for (let seed = 0; seed < v.variants; seed++) {
+    const cols = volcanoColumns(seed, v);
+    const at = new Map(cols.map((c) => [`${c.dx},${c.dz}`, c]));
+    assert.ok(cols.every((c) => Math.hypot(c.dx, c.dz) <= v.radius && c.top >= 0 && c.top <= v.height));
+    const middle = at.get('0,0');
+    assert.equal(middle.top, v.height - v.crater.depth);
+    assert.equal(middle.lava, v.height - 1);
+    assert.equal(volcanoBlock(seed, middle, middle.top, v), 'vent');
+    // The rim holds the lake in, except at the notch, which is lower than the lake.
+    const rim = cols.filter((c) => c.lava === undefined && Math.hypot(c.dx, c.dz) < v.crater.radius + 1.5);
+    const low = rim.filter((c) => c.top < middle.lava);
+    assert.ok(low.length >= 1 && low.length <= 2, `seed ${seed}: ${low.length} low rim columns`);
+    const a = notchAngle(seed);
+    for (const c of low) assert.ok(Math.cos(Math.atan2(c.dz, c.dx) - a) > 0.9, `seed ${seed}: a low rim column away from the notch`);
+    // The groove runs down the side from the notch.
+    const groove = cols.filter((c) => Math.cos(Math.atan2(c.dz, c.dx) - a) > 0.95 && Math.hypot(c.dx, c.dz) > v.crater.radius + 1);
+    assert.ok(groove.length > 3, `seed ${seed}: no groove`);
+    // It is big: at least 25 blocks across.
+    assert.ok(Math.max(...cols.map((c) => c.dx)) - Math.min(...cols.map((c) => c.dx)) >= 24);
+    assert.deepEqual(volcanoColumns(seed, v), cols, 'the same seed gives the same volcano');
+  }
+  assert.notDeepEqual(volcanoColumns(0, v), volcanoColumns(1, v));
+});
+
+test('a volcano is basalt and stone with magma round the crater', () => {
+  const v = RULES.volcano;
+  const kinds = new Set();
+  for (const c of volcanoColumns(0, v)) for (let y = -2; y <= c.top; y++) kinds.add(volcanoBlock(0, c, y, v));
+  assert.deepEqual([...kinds].sort(), ['basalt', 'blackstone', 'magma', 'stone', 'tuff', 'vent']);
+  assert.ok(hash01(1, 2, 3, 4) >= 0 && hash01(1, 2, 3, 4) < 1);
+  assert.equal(hash01(1, 2, 3, 4), hash01(1, 2, 3, 4));
+});
+
+test('a lava bomb thrown at its speed lands about as far off as asked', () => {
+  for (const reach of RULES.volcano.eruption.reach) {
+    for (const angle of RULES.volcano.eruption.angle) {
+      assert.ok(Math.abs(shotRange(bombSpeed(reach, angle, 0.05), angle, 0.05, 0) - reach) < 0.5, `${reach} at ${angle}°`);
+    }
+  }
 });

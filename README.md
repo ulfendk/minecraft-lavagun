@@ -1,6 +1,6 @@
 # Lava Guns
 
-Lava guns for Minecraft – a **Bedrock add-on** and a **Java Edition mod (Fabric)**. A lava pistol, a lava gun that shuts mobs in obsidian, an obsidian gun that builds with lasting obsidian, a lava cannon, a magma sprayer and magma grenades, magmasteel tools and armour, lava lamps, a lava tank, and two creatures of the Nether.
+Lava guns for Minecraft – a **Bedrock add-on** and a **Java Edition mod (Fabric)**. A lava pistol, a lava gun that shuts mobs in obsidian, an obsidian gun that builds with lasting obsidian, a lava cannon, a magma sprayer and magma grenades, magmasteel tools and armour, lava lamps, a lava tank, two creatures of the Nether – and volcanoes that erupt.
 
 **Website (English and Danish):** https://ulfendk.github.io/minecraft-lavagun/ · part of [all our mods](https://ulfendk.github.io/minecraft-index/)
 
@@ -21,6 +21,7 @@ Lava guns for Minecraft – a **Bedrock add-on** and a **Java Edition mod (Fabri
 - **Temporary lava** disappears after 6 s and only replaces air, grass and flowers. With `mobGriefing` off no lava or obsidian is placed (the lava gun freezes the mob instead). Players are only hurt with PvP on.
 - **Magmasteel** (iron + magma cream + blaze powder): sword that sets things on fire, pickaxe that smelts ores as it mines, axe, shovel; full armour gives fire resistance, and the boots harden lava underfoot into basalt (lava walker).
 - **Blocks:** lava lamps in four colours (animated, light 15), a lava tank holding 12 buckets (bucket in/out; 4 iron ingots turn a bucket of its lava into 8 lava cells), magma bricks, polished and chiseled magma, block of magmasteel.
+- **Volcanoes:** cones of basalt about 29 blocks across and 18 high, with a lake of lava in the crater that runs over a notch in the rim and down the side all the time. Every 2–8 minutes, when a player is within 64 blocks, one rumbles and throws out lava bombs for 6 s (up to 28 blocks away, 6 damage and 4 s of fire on a hit); they land as **magma and basalt that stay** (nothing with `mobGriefing` off). They generate only in **newly explored chunks**: rarely anywhere on Overworld land (1 in 400 chunks), more often in mountains (1 in 90) and the Nether's basalt deltas (1 in 60). Or craft a **volcano vent** (4 magma blocks, 4 basalt, a magma core) and put it down: a volcano grows round it. Mining the vent stops the eruptions.
 - **Creatures:** the magma golem (neutral, 3 blocks tall, slams lava out of the ground, drops the magma core for the lava gun) and the lava slug (fill a bucket with lava from it every 5 minutes). Both live in nether wastes and basalt deltas.
 
 All numbers are in [`src/rules.mjs`](src/rules.mjs), shared by both editions.
@@ -48,11 +49,11 @@ cd java && ./gradlew build runGameTest   # Java mod + game tests (after npm run 
 | `src/rules.mjs` | damage, fire, ammo, times and sizes: every number both editions share |
 | `src/items.mjs`, `src/blocks.mjs`, `src/creatures.mjs` | the items, blocks and creatures, with names in English and Danish and their recipes |
 | `src/art.mjs`, `src/lib/icon.mjs` | item icons, block textures, armour and the pack icon, drawn in code |
-| `src/lib/temp.mjs` | temporary blocks and the obsidian shell's shape, shared by the Bedrock scripts and the tests; `java/.../world/TemporaryBlocks.java` and `Encasement.java` follow the same rules |
+| `src/lib/temp.mjs` | temporary blocks, the obsidian shell's shape and the volcano's shape, shared by the Bedrock scripts and the tests (`java/.../world/Volcano.java` builds the same volcano); `java/.../world/TemporaryBlocks.java` and `Encasement.java` follow the same rules |
 | `src/i18n.mjs` | in-game and website texts, English and Danish |
-| `src/packs/behavior_pack/scripts/` | Bedrock scripts: `guns.js`, `lava.js`, `gear.js`, `tank.js`, `selftest.js` |
-| `java/` | the Fabric mod: `LavaGunItem`, `MagmaSprayerItem`, `LavaShot`, `MagmaGrenade`, `MagmaGolem`, `LavaSlug`, `LavaTankBlock`, `Gear` |
-| `tools/` | build, validate, package, preview, site, release notes, BDS test |
+| `src/packs/behavior_pack/scripts/` | Bedrock scripts: `guns.js`, `lava.js`, `gear.js`, `tank.js`, `cannon.js`, `flight.js` (cannon balls and lava bombs), `volcano.js`, `selftest.js` |
+| `java/` | the Fabric mod: `LavaGunItem`, `MagmaSprayerItem`, `LavaShot`, `MagmaGrenade`, `MagmaGolem`, `LavaSlug`, `LavaTankBlock`, `LavaCannon`, `VolcanoVentBlock`, `Volcano`, `VolcanoFeature`, `Gear` |
+| `tools/` | build, validate, package, preview, site, release notes, BDS test; `mcstructure.mjs` writes the Bedrock volcano structures, `volcano-art.mjs` draws them |
 
 ## Releases
 

@@ -241,3 +241,75 @@ export function shotSpeed(range, angle, gravity, height) {
 
 /** The next range setting after `n`: 1, 2, … `count`, then 1 again. */
 export const nextRange = (n, count) => (n % count) + 1;
+
+// ---------------------------------------------------------------- volcanoes
+
+/** A number in [0, 1) from a seed and a position; the same in dk.ulfen.lavagun.world.Volcano. */
+export function hash01(seed, x, y, z) {
+  let h = (Math.imul(x, 0x27d4eb2d) + Math.imul(y, 0x165667b1) + Math.imul(z, 0x9e3779b1) + seed) | 0;
+  h = Math.imul(h ^ (h >>> 15), 0x85ebca6b);
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+  h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+}
+
+/** Which way the notch in the rim faces, in radians. */
+export const notchAngle = (seed) => hash01(seed, 7, 7, 7) * 2 * Math.PI;
+
+/**
+ * The shape of a volcano: one column per (dx, dz) round the vent. Heights are in
+ * blocks above the vent's base: a column is solid from the ground up to `top`, and a
+ * crater column has lava above it up to `lava`. The vent is the top of the middle
+ * column. The rim is cut lower where the notch is, and a groove runs from there down
+ * the side, so the crater's lava runs out and down all the time.
+ */
+export function volcanoColumns(seed, v) {
+  const R = v.radius, H = v.height, cR = v.crater.radius, floor = H - v.crater.depth;
+  const phases = [1, 2, 3].map((k) => hash01(seed, k, 0, 0) * 2 * Math.PI);
+  const notch = notchAngle(seed);
+  const nx = Math.cos(notch), nz = Math.sin(notch);
+  const columns = [];
+  for (let dx = -R; dx <= R; dx++) {
+    for (let dz = -R; dz <= R; dz++) {
+      const r = Math.sqrt(dx * dx + dz * dz);
+      if (r > R) continue;
+      const a = Math.atan2(dz, dx);
+      // The foot wobbles in and out a little, so it isn't a perfect circle.
+      const wobble = (Math.cos(a + phases[0]) + Math.cos(2 * a + phases[1]) + Math.cos(3 * a + phases[2])) / 3;
+      const foot = R - 1.5 + 1.5 * wobble;
+      if (r < cR + 0.5) {
+        columns.push({ dx, dz, top: floor, lava: H - 1 });
+        continue;
+      }
+      if (r >= foot) continue;
+      const along = dx * nx + dz * nz, across = Math.abs(dz * nx - dx * nz);
+      const groove = along > 0 && across < 0.75;
+      let top = r < cR + 1.5 ? H : Math.round(H * Math.pow((foot - r) / (foot - cR - 1), v.profile));
+      if (groove) top = Math.min(top - 1, H - 2);
+      if (top < 0) continue;
+      columns.push({ dx, dz, top });
+    }
+  }
+  return columns;
+}
+
+/**
+ * What a volcano's block at height `y` of a column is made of: basalt on the outside,
+ * with some blackstone, tuff and, more of it near the top, magma; stone inside; magma
+ * round the crater; the vent in the middle.
+ */
+export function volcanoBlock(seed, col, y, v) {
+  if (col.dx === 0 && col.dz === 0 && y === col.top) return 'vent';
+  const r = Math.sqrt(col.dx * col.dx + col.dz * col.dz);
+  if (r < v.crater.radius + 1.5 && y >= v.height - v.crater.depth - 2) return 'magma';
+  if (col.top - y >= 2 && col.top > 2) return 'stone';
+  const n = hash01(seed, col.dx, y, col.dz);
+  const magma = 0.04 + 0.12 * Math.max(0, y) / v.height;
+  if (n < magma) return 'magma';
+  if (n < magma + 0.15) return 'blackstone';
+  if (n < magma + 0.25) return 'tuff';
+  return 'basalt';
+}
+
+/** How fast to throw a volcano bomb (blocks a tick) so it lands `reach` blocks away. */
+export const bombSpeed = (reach, angle, gravity) => shotSpeed(reach, angle, gravity, 0);

@@ -1,13 +1,16 @@
 // Used by tools/bds-test.sh: `scriptevent lavagun:selftest` checks that the items,
 // blocks and creatures exist, that a pig is shut in obsidian and let out again,
 // that temporary lava goes away, that the obsidian gun's obsidian stays, and that
-// the lava cannon's lava lands about as far off as its range says, and stays. It prints PASS or FAIL when it is done.
+// the lava cannon's lava lands about as far off as its range says, and stays, and
+// that a volcano vent grows a volcano whose lava runs over the rim and whose eruption
+// leaves rubble that stays. It prints PASS or FAIL when it is done.
 import { BlockPermutation, ItemStack, system, world } from '@minecraft/server';
 import { BLOCKS, CREATURES, ITEMS, RULES } from './data.js';
 import { fireCannon, getRange, stepRange } from './cannon.js';
 import { encase, isHeld } from './guns.js';
 import { isTemporary, placeObsidian, placeTemp } from './lava.js';
 import { LOG } from './util.js';
+import { erupt } from './volcano.js';
 
 const later = (ticks) => new Promise((resolve) => system.runTimeout(resolve, ticks));
 
@@ -91,8 +94,76 @@ async function selfTest() {
     }
   }
 
+  await volcanoTest(dim, problems);
+
   console.log(`${LOG} selftest: ${ITEMS.length} items, ${BLOCKS.length} blocks, ${CREATURES.length} creatures`);
   console.log(problems.length ? `${LOG} selftest FAIL: ${problems.join('; ')}` : `${LOG} selftest PASS`);
+}
+
+/** Blocks of these types in a box. */
+function count(dim, types, min, max) {
+  let n = 0;
+  for (let x = min.x; x <= max.x; x++)
+    for (let y = min.y; y <= max.y; y++)
+      for (let z = min.z; z <= max.z; z++) if (types.includes(dim.getBlock({ x, y, z })?.typeId)) n++;
+  return n;
+}
+
+/** In the second ticking area (tools/bds-test.sh), well away from the rest. */
+async function volcanoTest(dim, problems) {
+  const V = RULES.volcano;
+  const at = { x: 240, y: -60, z: 0 };
+  dim.getBlock(at).setPermutation(BlockPermutation.resolve(`lavagun:${V.id}`, { 'lavagun:grown': false }));
+  await later(60);
+  let vent;
+  for (let y = at.y; y < at.y + V.height + V.skirt && !vent; y++) {
+    const b = dim.getBlock({ ...at, y });
+    if (b?.typeId === `lavagun:${V.id}` && b.permutation.getState('lavagun:grown')) vent = b.location;
+  }
+  if (!vent) return problems.push('the volcano vent did not grow a volcano');
+  const lake = dim.getBlock({ ...vent, y: vent.y + 1 });
+  if (lake?.typeId !== 'minecraft:lava') problems.push(`no lava in the crater (${lake?.typeId})`);
+  const flank = dim.getBlock({ x: at.x + 8, y: at.y, z: at.z });
+  if (!flank || flank.isAir) problems.push('the volcano has no side');
+  // Lava creeps a block every 30 ticks: give it time to reach the crater floor's level outside the rim.
+  await later(300);
+  const box = (r, lo, hi) => [{ x: at.x - r, y: lo, z: at.z - r }, { x: at.x + r, y: hi, z: at.z + r }];
+  const flowing = count(dim, ['minecraft:flowing_lava', 'minecraft:lava'], ...box(V.radius, at.y, vent.y));
+  if (!flowing) problems.push('no lava runs out of the crater');
+  // The grown vent came with the structure: it must still tick, and fill its crater again.
+  dim.getBlock({ ...vent, y: vent.y + 1 }).setType('minecraft:air');
+  await later(130);
+  const refilled = dim.getBlock({ ...vent, y: vent.y + 1 });
+  if (refilled?.typeId !== 'minecraft:lava' || refilled.permutation.getState('liquid_depth') !== 0) problems.push(`the vent did not fill its crater again (${refilled?.typeId})`);
+
+  // An eruption: bombs land as magma and basalt that stay. Only count outside the cone.
+  const rubble = () => {
+    const [min, max] = box(V.radius + 14, at.y, at.y + 3);
+    return count(dim, ['minecraft:magma', 'minecraft:basalt'], min, max) - count(dim, ['minecraft:magma', 'minecraft:basalt'], ...box(V.radius, at.y, at.y + 3));
+  };
+  const before = rubble();
+  if (!erupt(dim, vent)) problems.push('the volcano did not erupt');
+  await later((V.eruption.rumble + V.eruption.length) * 20 + 120);
+  const after = rubble();
+  console.log(`${LOG} selftest: the eruption left ${after - before} rubble blocks round the volcano`);
+  if (after <= before) problems.push('the eruption left no rubble');
+
+  // The volcanoes that generate with the world. The structure turns about its corner, so look all round it.
+  const site = { x: 300, y: -60, z: 0 };
+  let placed = false;
+  for (const name of ['volcano_feature', 'volcano_0_feature']) {
+    try {
+      placed = dim.placeFeature(`lavagun:${name}`, site, true);
+    } catch (e) {
+      console.log(`${LOG} selftest: placing ${name} failed: ${e}`);
+    }
+    if (placed) break;
+  }
+  await later(20);
+  const reach = 2 * V.radius + 5;
+  const vents = count(dim, [`lavagun:${V.id}`], { x: site.x - reach, y: site.y, z: site.z - reach }, { x: site.x + reach, y: site.y + 40, z: site.z + reach });
+  console.log(`${LOG} selftest: the volcano feature was placed: ${placed}, ${vents} vents`);
+  if (!vents) problems.push('the volcano feature placed no vent');
 }
 
 export function setupSelfTest() {

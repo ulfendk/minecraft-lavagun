@@ -37,6 +37,19 @@ export const RULES = {
     ranges: [8, 16, 24, 32, 40], startRange: 3, angle: 25, gravity: 0.05, muzzle: { forward: 1.3, up: 1.1 },
     damage: 8, fire: 5, health: 20,
   },
+  // Volcanoes: a cone of basalt round a crater of lava, grown from a volcano vent.
+  // Lava runs over a notch in the rim all the time; now and then (when a player is
+  // near) it erupts and throws out lava bombs that land as magma and basalt that stay.
+  volcano: {
+    id: 'volcano_vent', radius: 15, height: 18, crater: { radius: 3, depth: 3 }, skirt: 8, profile: 1.4,
+    eruption: {
+      every: [120, 480], nearby: 64, rumble: 3, length: 6, bombsPerPulse: [1, 2], pulseTicks: 4,
+      angle: [55, 80], reach: [4, 28], damage: 6, fire: 4, magma: 0.6, fireChance: 0.3,
+    },
+    // One volcano in this many chunks.
+    worldgen: { land: 400, mountains: 90, basalt_deltas: 60 },
+    variants: 4,
+  },
   grenade: { id: 'magma_grenade', damage: 6, radius: 3, fire: 4, ring: 2 },
   sword: { fire: 4 },
   golem: { slam: 10, slamRadius: 3, slamLava: 1 },

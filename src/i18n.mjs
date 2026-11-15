@@ -7,13 +7,14 @@ export const LOCALES = ['en_US', 'da_DK'];
 const IDX = { en_US: 0, da_DK: 1 };
 
 const GAME = {
-  description: ['Lava guns, magmasteel gear, lava lamps and tanks, and magma creatures.', 'Lavakanoner, magmastålsudstyr, lavalamper og -tanke og magmavæsner.'],
+  description: ['Lava guns, magmasteel gear, lava lamps and tanks, magma creatures and volcanoes.', 'Lavakanoner, magmastålsudstyr, lavalamper og -tanke, magmavæsner og vulkaner.'],
   itemGroup: ['Lava Guns', 'Lavakanoner'],
   // Projectiles: shown in death messages.
   lava_bolt: ['Lava Bolt', 'Lavaskud'],
   lava_blob: ['Lava Blob', 'Lavaklump'],
   obsidian_blob: ['Obsidian Blob', 'Obsidianklump'],
   lava_ball: ['Lava Ball', 'Lavakugle'],
+  volcano_bomb: ['Lava Bomb', 'Lavabombe'],
   magma_grenade: ['Magma Grenade', 'Magmagranat'],
   no_ammo: ['Out of %s', 'Ikke mere %s'],
   encased: ['Shut in obsidian!', 'Lukket inde i obsidian!'],
@@ -62,8 +63,8 @@ const en = {
   allMods: 'All our mods',
   name: 'Lava Guns',
   title: 'Lava Guns – Minecraft add-on and mod',
-  description: 'Lava guns for Minecraft Bedrock and Java Edition: a lava pistol, a lava gun that shuts mobs in obsidian, an obsidian gun that builds with lasting obsidian, a lava cannon, a magma sprayer and grenades, magmasteel tools and armour, lava lamps, lava tanks and magma creatures. Free download.',
-  tagline: 'A lava pistol, a lava gun that shuts mobs in obsidian, an obsidian gun that builds with lasting obsidian, a lava cannon, a magma sprayer and magma grenades. Forge magmasteel tools and armour, light your base with lava lamps, keep lava in a tank – and meet the magma golems of the Nether.',
+  description: 'Lava guns for Minecraft Bedrock and Java Edition: a lava pistol, a lava gun that shuts mobs in obsidian, an obsidian gun that builds with lasting obsidian, a lava cannon, a magma sprayer and grenades, magmasteel tools and armour, lava lamps, lava tanks, magma creatures and erupting volcanoes. Free download.',
+  tagline: 'A lava pistol, a lava gun that shuts mobs in obsidian, an obsidian gun that builds with lasting obsidian, a lava cannon, a magma sprayer and magma grenades. Forge magmasteel tools and armour, light your base with lava lamps, keep lava in a tank – meet the magma golems of the Nether, and stay clear of the volcanoes when they erupt.',
   download: 'iPad, phone, console & Windows: Bedrock',
   downloadJava: 'Mac & PC: Java Edition',
   which: '<b>Which one do I need?</b> Playing on an <b>iPad</b>, iPhone, Android, Xbox, PlayStation, Switch or Minecraft for Windows? That is <b>Bedrock Edition</b> – take the first download. Playing on a computer with the Minecraft <b>Java Edition</b> launcher (Mac, Windows or Linux)? Take the Java download. Not sure? If you bought Minecraft in the App Store or Google Play, it is Bedrock.',
@@ -141,6 +142,14 @@ const en = {
     ['Lava tank', 'Holds 12 buckets of lava. Pour lava in with a bucket and take it out with an empty bucket. Use 4 iron ingots on it to turn a bucket of its lava into 8 lava cells.'],
     ['Magma blocks', 'Magma bricks, polished and chiseled magma and blocks of magmasteel glow softly – and unlike magma blocks, they don’t burn your feet.'],
   ],
+  volcanoTitle: 'Volcanoes',
+  volcanoLede: 'Black cones of basalt with a lake of lava in the crater. You find them now and then in new land you explore – most often in the mountains and in the Nether’s basalt deltas – or you grow your own.',
+  volcano: [
+    ['A steady flow', 'Lava runs over a notch in the crater’s rim and down the side, all the time. The vent at the bottom of the crater keeps it full.'],
+    ['Eruptions', 'Every few minutes, when someone is near, the ground rumbles and the volcano throws out lava bombs, up to 28 blocks away. A bomb that hits you does 3 ♥ and sets you on fire.'],
+    ['It grows', 'The bombs land as magma blocks and basalt that stay, so the land around a volcano slowly fills with rock. With <em>mobGriefing</em> off, they still hurt but place nothing.'],
+    ['Grow your own', 'Craft a volcano vent from four magma blocks, four basalt and a magma core, and put it down where you want a volcano. It grows within a second. Mine the vent and the volcano goes quiet.'],
+  ],
   creaturesTitle: 'Creatures of the Nether',
   creatures: {
     magma_golem: 'Three blocks tall and made of cooling lava. It leaves you alone – until you hit it. Then it slams the ground hard enough to split it with lava. It drops the magma core you need for the lava gun.',
@@ -155,8 +164,8 @@ const da = {
   allMods: 'Alle vores mods',
   name: 'Lavakanoner',
   title: 'Lavakanoner – tilføjelse og mod til Minecraft',
-  description: 'Lavakanoner til Minecraft Bedrock og Java Edition: en lavapistol, en lavakanon, der lukker væsner inde i obsidian, en obsidiankanon, der bygger med obsidian, som bliver, en lavabombarde, en magmasprøjte og granater, værktøj og rustning af magmastål, lavalamper, lavatanke og magmavæsner. Gratis download.',
-  tagline: 'En lavapistol, en lavakanon, der lukker væsner inde i obsidian, en obsidiankanon, der bygger med obsidian, som bliver, en lavabombarde, en magmasprøjte og magmagranater. Smed værktøj og rustning af magmastål, oplys din base med lavalamper, gem lava i en tank – og mød Nethers magmagolemmer.',
+  description: 'Lavakanoner til Minecraft Bedrock og Java Edition: en lavapistol, en lavakanon, der lukker væsner inde i obsidian, en obsidiankanon, der bygger med obsidian, som bliver, en lavabombarde, en magmasprøjte og granater, værktøj og rustning af magmastål, lavalamper, lavatanke, magmavæsner og vulkaner i udbrud. Gratis download.',
+  tagline: 'En lavapistol, en lavakanon, der lukker væsner inde i obsidian, en obsidiankanon, der bygger med obsidian, som bliver, en lavabombarde, en magmasprøjte og magmagranater. Smed værktøj og rustning af magmastål, oplys din base med lavalamper, gem lava i en tank – mød Nethers magmagolemmer, og hold dig væk fra vulkanerne, når de går i udbrud.',
   download: 'iPad, telefon, konsol & Windows: Bedrock',
   downloadJava: 'Mac & pc: Java Edition',
   which: '<b>Hvilken skal jeg bruge?</b> Spiller du på <b>iPad</b>, iPhone, Android, Xbox, PlayStation, Switch eller Minecraft til Windows? Så er det <b>Bedrock Edition</b> – tag den første download. Spiller du på en computer med Minecraft <b>Java Edition</b>-launcheren (Mac, Windows eller Linux)? Så tag Java-downloaden. I tvivl? Hvis Minecraft er købt i App Store eller Google Play, er det Bedrock.',
@@ -233,6 +242,14 @@ const da = {
     ['Lavalamper', 'Boblende lamper i fire farver, der lyser lige så kraftigt som glødesten.'],
     ['Lavatank', 'Rummer 12 spande lava. Hæld lava i med en spand, og tag den ud med en tom spand. Brug 4 jernbarrer på den for at lave en spand af dens lava om til 8 lavapatroner.'],
     ['Magmablokke', 'Magmamursten, poleret og mejslet magma og blokke af magmastål gløder svagt – og i modsætning til magmablokke brænder de ikke dine fødder.'],
+  ],
+  volcanoTitle: 'Vulkaner',
+  volcanoLede: 'Sorte kegler af basalt med en sø af lava i krateret. Du finder dem en gang imellem i nyt land, du udforsker – oftest i bjergene og i Nethers basaltdeltaer – eller du dyrker din egen.',
+  volcano: [
+    ['Lava, der bliver ved', 'Lava løber hele tiden ud over et hak i kraterkanten og ned ad siden. Åbningen i bunden af krateret holder det fyldt.'],
+    ['Udbrud', 'Med få minutters mellemrum, når nogen er i nærheden, buldrer jorden, og vulkanen kaster lavabomber ud, op til 28 blokke væk. En bombe, der rammer dig, giver 3 ♥ i skade og sætter ild til dig.'],
+    ['Den vokser', 'Bomberne lander som magmablokke og basalt, der bliver liggende, så landet rundt om en vulkan langsomt fyldes med sten. Er <em>mobGriefing</em> slået fra, gør de stadig skade, men lægger ingenting.'],
+    ['Dyrk din egen', 'Lav en vulkanåbning af fire magmablokke, fire basalt og en magmakerne, og sæt den ned, hvor du vil have en vulkan. Den vokser frem på et sekund. Hakker du åbningen væk, falder vulkanen til ro.'],
   ],
   creaturesTitle: 'Væsner fra Nether',
   creatures: {

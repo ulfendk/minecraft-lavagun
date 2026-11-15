@@ -4,6 +4,7 @@ import dk.ulfen.lavagun.Lava;
 import dk.ulfen.lavagun.LavaData;
 import dk.ulfen.lavagun.LavaRegistry;
 import dk.ulfen.lavagun.world.Encasement;
+import dk.ulfen.lavagun.world.Volcano;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
@@ -24,8 +25,9 @@ import net.minecraft.world.phys.HitResult;
 /**
  * A shot from a lava gun. The lava pistol's bolt burns what it hits; the lava gun's
  * blob shuts a mob in obsidian, or splashes lava where it lands; the obsidian gun's
- * blob sets into obsidian that stays; the lava cannon's ball leaves lava that stays.
- * The numbers are in src/rules.mjs (guns.* and cannon).
+ * blob sets into obsidian that stays; the lava cannon's ball leaves lava that stays;
+ * a volcano's bomb lands as magma or basalt that stays. The numbers are in
+ * src/rules.mjs (guns.*, cannon and volcano).
  */
 public class LavaShot extends ThrowableItemProjectile {
 	public LavaShot(EntityType<? extends LavaShot> type, Level level) {
@@ -48,18 +50,22 @@ public class LavaShot extends ThrowableItemProjectile {
 		return this.getType() == LavaRegistry.LAVA_BALL;
 	}
 
+	private boolean isBomb() {
+		return this.getType() == LavaRegistry.VOLCANO_BOMB;
+	}
+
 	private LavaData.Gun gun() {
 		return LavaData.rules().guns().get(isObsidian() ? "obsidian_gun" : isBlob() ? "lava_gun" : "lava_pistol");
 	}
 
 	@Override
 	protected Item getDefaultItem() {
-		return isBall() ? Items.MAGMA_BLOCK : isObsidian() ? Items.OBSIDIAN : isBlob() ? LavaRegistry.MAGMA_CORE : LavaRegistry.MAGMA_CHARGE;
+		return isBall() || isBomb() ? Items.MAGMA_BLOCK : isObsidian() ? Items.OBSIDIAN : isBlob() ? LavaRegistry.MAGMA_CORE : LavaRegistry.MAGMA_CHARGE;
 	}
 
 	@Override
 	protected double getDefaultGravity() {
-		return isBall() ? LavaData.rules().cannon().gravity() : gun().gravity();
+		return isBomb() ? Volcano.BOMB_GRAVITY : isBall() ? LavaData.rules().cannon().gravity() : gun().gravity();
 	}
 
 	/** The cannon's ball flies past cannons. */
@@ -72,7 +78,7 @@ public class LavaShot extends ThrowableItemProjectile {
 	public void tick() {
 		super.tick();
 		if (this.level().isClientSide() && this.tickCount % 2 == 0) {
-			this.level().addParticle(isBlob() || isObsidian() || isBall() ? ParticleTypes.LAVA : ParticleTypes.FLAME, this.getX(), this.getY(), this.getZ(), 0, 0, 0);
+			this.level().addParticle(isBlob() || isObsidian() || isBall() || isBomb() ? ParticleTypes.LAVA : ParticleTypes.FLAME, this.getX(), this.getY(), this.getZ(), 0, 0, 0);
 		}
 	}
 
@@ -83,6 +89,11 @@ public class LavaShot extends ThrowableItemProjectile {
 		Entity target = hit.getEntity();
 		Entity owner = this.getOwner();
 		if (!Lava.mayHurt(level, target, owner)) return;
+		if (isBomb()) {
+			LavaData.Eruption e = LavaData.rules().volcano().eruption();
+			Lava.hurt(level, target, this.damageSources().thrown(this, owner), e.damage(), e.fire());
+			return;
+		}
 		if (isBall()) {
 			LavaData.Cannon c = LavaData.rules().cannon();
 			BlockPos feet = target.blockPosition();
@@ -113,6 +124,11 @@ public class LavaShot extends ThrowableItemProjectile {
 	protected void onHitBlock(BlockHitResult hit) {
 		super.onHitBlock(hit);
 		if (!(this.level() instanceof ServerLevel level)) return;
+		if (isBomb()) {
+			this.playSound(SoundEvents.GENERIC_EXPLODE.value(), 0.6F, 1.4F);
+			Volcano.rubble(level, hit.getBlockPos().relative(hit.getDirection()));
+			return;
+		}
 		if (isBall()) {
 			this.playSound(SoundEvents.BUCKET_EMPTY_LAVA, 1.0F, 0.8F);
 			Lava.lastingLava(level, hit.getBlockPos().relative(hit.getDirection()));
@@ -135,7 +151,7 @@ public class LavaShot extends ThrowableItemProjectile {
 	protected void onHit(HitResult hit) {
 		super.onHit(hit);
 		if (this.level() instanceof ServerLevel level) {
-			level.sendParticles(ParticleTypes.LAVA, this.getX(), this.getY(), this.getZ(), isBlob() || isObsidian() || isBall() ? 8 : 3, 0.2, 0.2, 0.2, 0);
+			level.sendParticles(ParticleTypes.LAVA, this.getX(), this.getY(), this.getZ(), isBlob() || isObsidian() || isBall() || isBomb() ? 8 : 3, 0.2, 0.2, 0.2, 0);
 			this.discard();
 		}
 	}

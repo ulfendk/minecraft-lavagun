@@ -144,13 +144,43 @@ export async function buildJava({ creatures, cannon, items, blocks, blockTexture
       await write(join(A, 'items', `${block.id}.json`), { model: { type: 'minecraft:model', model: `${NS}:block/${block.id}_0` } });
     } else {
       await write(join(A, 'models', 'block', `${block.id}.json`), { parent: 'minecraft:block/cube_all', textures: { all: `${NS}:block/${block.id}` } });
-      await write(join(A, 'blockstates', `${block.id}.json`), { variants: { '': { model: `${NS}:block/${block.id}` } } });
+      const model = { model: `${NS}:block/${block.id}` };
+      const variants = block.vent ? { 'grown=false': model, 'grown=true': model } : { '': model };
+      await write(join(A, 'blockstates', `${block.id}.json`), { variants });
       await write(join(A, 'items', `${block.id}.json`), { model: { type: 'minecraft:model', model: `${NS}:block/${block.id}` } });
       if (block.frames) await write(join(A, 'textures', 'block', `${block.id}.png.mcmeta`), { animation: { frametime: 3, interpolate: true } });
     }
     await write(join(D, 'loot_table', 'blocks', `${block.id}.json`), blockLoot(block.id));
   }
   await write(join(OUT, 'data', 'minecraft', 'tags', 'block', 'mineable', 'pickaxe.json'), { values: blocks.map((b) => `${NS}:${b.id}`) });
+
+  // Volcanoes that generate with the world (dk.ulfen.lavagun.world.VolcanoFeature).
+  await write(join(D, 'worldgen', 'feature', 'volcano.json'), { type: `${NS}:volcano` });
+  const surface = (chance) => [
+    { type: 'minecraft:rarity_filter', chance },
+    { type: 'minecraft:in_square' },
+    { type: 'minecraft:heightmap', heightmap: 'WORLD_SURFACE_WG' },
+    { type: 'minecraft:biome' },
+  ];
+  const placed = {
+    volcano_land: surface(rules.volcano.worldgen.land),
+    volcano_mountains: surface(rules.volcano.worldgen.mountains),
+    // The Nether has a roof: look down from somewhere in the middle for a floor to stand on.
+    volcano_basalt_deltas: [
+      { type: 'minecraft:rarity_filter', chance: rules.volcano.worldgen.basalt_deltas },
+      { type: 'minecraft:in_square' },
+      { type: 'minecraft:height_range', height: { type: 'minecraft:uniform', min_inclusive: { absolute: 40 }, max_inclusive: { absolute: 96 } } },
+      {
+        type: 'minecraft:environment_scan', direction_of_search: 'down', max_steps: 32,
+        target_condition: { type: 'minecraft:solid' }, allowed_search_condition: { type: 'minecraft:matching_block_tag', tag: 'minecraft:air' },
+      },
+      { type: 'minecraft:offset', x: 0, y: 1, z: 0 },
+      { type: 'minecraft:biome' },
+    ],
+  };
+  for (const [name, placement] of Object.entries(placed)) {
+    await write(join(D, 'worldgen', 'placed_feature', `${name}.json`), { feature: `${NS}:volcano`, placement });
+  }
 
   for (const recipe of recipes) {
     const [name, body] = javaRecipe(recipe);

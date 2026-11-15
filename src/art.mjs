@@ -406,6 +406,14 @@ export const BLOCK_TEXTURES = {
     if ((x + y) % 7 === 0 && noise3(x, y, 0, 3) > 0.55) return hex(C.lava);
     return shade(hex(C.magmasteel), 0.85 + 0.35 * noise3(x / 3, y / 3, 2, 8) + (y < 4 ? 0.12 : 0));
   })),
+  // The volcano vent: cracked black basalt with lava welling up through the cracks.
+  volcano_vent: () => encode(canvas(16, 16, (x, y) => {
+    const crack = Math.abs(fbm(x / 5, y / 5, 3, 31) - 0.5);
+    const glow = 1 - Math.min(1, Math.hypot(x - 7.5, y - 7.5) / 9);
+    if (crack < 0.03 + 0.05 * glow) return mix(hex(C.lava), hex(C.lavaLight), noise3(x, y, 3, 2) * glow);
+    if (crack < 0.07 + 0.05 * glow) return mix(hex('#3a1a10'), hex(C.lavaDark), glow);
+    return shade(hex('#2b2526'), 0.8 + 0.3 * noise3(x / 2, y / 2, 5, 11));
+  })),
   tank_top: () => encode(canvas(16, 16, (x, y) => {
     const edge = x <= 1 || y <= 1 || x >= 14 || y >= 14;
     if (edge) return shade(hex(C.steel), x <= 1 || y <= 1 ? 1.15 : 0.85);

@@ -17,7 +17,7 @@ import com.google.gson.reflect.TypeToken;
  * Field names match the JSON.
  */
 public final class LavaData {
-	public record Rules(Map<String, Gun> guns, Sprayer sprayer, Cannon cannon, Grenade grenade, Sword sword, Golem golem, Temporary temporary,
+	public record Rules(Map<String, Gun> guns, Sprayer sprayer, Cannon cannon, Volcano volcano, Grenade grenade, Sword sword, Golem golem, Temporary temporary,
 		Shell shell, List<String> fireproof, Tank tank, Slug slug, Armor armor) {}
 
 	public record Gun(String ammo, int ammoPerShot, String projectile, float cooldown, float speed, float gravity, float damage, int fire,
@@ -35,6 +35,17 @@ public final class LavaData {
 		float angle, float gravity, Muzzle muzzle, float damage, int fire, float health) {}
 
 	public record Muzzle(float forward, float up) {}
+
+	/** Volcanoes: the shape round the vent, the eruptions, and one in how many chunks generates one. */
+	public record Volcano(String id, int radius, int height, Crater crater, int skirt, double profile, Eruption eruption, Worldgen worldgen, int variants) {}
+
+	public record Crater(int radius, int depth) {}
+
+	/** `every` is in seconds between eruptions, `angle` in degrees, `reach` in blocks (each a [low, high] range). */
+	public record Eruption(float[] every, float nearby, float rumble, float length, int[] bombsPerPulse, int pulseTicks, float[] angle, float[] reach,
+		float damage, int fire, float magma, float fireChance) {}
+
+	public record Worldgen(int land, int mountains, int basalt_deltas) {}
 
 	public record Grenade(String id, float damage, float radius, int fire, int ring) {}
 

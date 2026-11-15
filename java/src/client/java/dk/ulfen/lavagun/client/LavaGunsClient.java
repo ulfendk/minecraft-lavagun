@@ -16,6 +16,7 @@ public class LavaGunsClient implements ClientModInitializer {
 		EntityRenderers.register(LavaRegistry.LAVA_BLOB, ThrownItemRenderer::new);
 		EntityRenderers.register(LavaRegistry.OBSIDIAN_BLOB, ThrownItemRenderer::new);
 		EntityRenderers.register(LavaRegistry.LAVA_BALL, ThrownItemRenderer::new);
+		EntityRenderers.register(LavaRegistry.VOLCANO_BOMB, ThrownItemRenderer::new);
 		EntityRenderers.register(LavaRegistry.MAGMA_GRENADE_ENTITY, ThrownItemRenderer::new);
 	}
 }

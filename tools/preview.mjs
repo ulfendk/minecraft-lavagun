@@ -1,10 +1,12 @@
-// Renders the creatures (from several sides, walking and attacking) and the lava cannon into
+// Renders the creatures (from several sides, walking and attacking), the lava cannon and the volcanoes into
 // build/preview/, plus build/preview/sheet.png with the creatures, every item and
 // every block, which is attached to each release.
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { build } from './build.mjs';
 import { render, sheet } from './render.mjs';
+import { volcanoPicture } from './volcano-art.mjs';
+import { RULES } from '../src/rules.mjs';
 import { NS } from '../src/lib/constants.mjs';
 import { firstFrame, upscale } from '../src/lib/png.mjs';
 
@@ -34,6 +36,9 @@ for (const { creature: c, geo, texture, animations } of Object.values(creatures)
   await writeFile(join(OUT, `${cannon.cannon.id}.png`), sheet(views, { cols: 2 }));
   portraits.push(render(geo.geometry, texture, { yaw: 35, size: CELL }));
 }
+// The volcanoes that generate and grow, one picture each, and the first on the sheet.
+for (let seed = 0; seed < RULES.volcano.variants; seed++) await writeFile(join(OUT, `volcano_${seed}.png`), volcanoPicture(seed, RULES.volcano, 480));
+portraits.push(volcanoPicture(0, RULES.volcano, CELL));
 const icons = items.map((i) => upscale(i.icon, 8));
 // A full tank, and the first frame of each lava lamp.
 const tiles = blocks.map((b) => upscale(b.tank ? b.sides.at(-1) : firstFrame(b.texture), 8));
