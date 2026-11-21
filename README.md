@@ -59,6 +59,10 @@ cd java && ./gradlew build runGameTest   # Java mod + game tests (after npm run 
 
 Bump `version` in `package.json`, add a section to `CHANGELOG.md`, and push a tag `vX.Y.Z`. The release workflow builds and tests both editions and attaches the `.mcaddon`, `.mcpack` and `.jar` files.
 
+## Support
+
+If you enjoy our mods, you can support us on [GitHub Sponsors](https://github.com/sponsors/ulfendk) or [Buy Me a Coffee](https://buymeacoffee.com/ulfendk).
+
 ## License
 
 MIT. Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.
